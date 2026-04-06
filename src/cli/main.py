@@ -34,6 +34,7 @@ app = typer.Typer(
     name="learn",
     help="🧠 Recursive Learning Graph Engine — CLI",
     rich_markup_mode="rich",
+    no_args_is_help=True,
 )
 console = Console()
 
@@ -78,7 +79,7 @@ def init(
 
 # ── goal ───────────────────────────────────────────────────────────────────────
 
-goal_app = typer.Typer(help="管理学习目标")
+goal_app = typer.Typer(help="管理学习目标", no_args_is_help=True)
 app.add_typer(goal_app, name="goal")
 
 

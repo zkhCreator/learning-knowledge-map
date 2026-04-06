@@ -36,9 +36,21 @@ ANTHROPIC_BASE_URL: str | None = os.environ.get("ANTHROPIC_BASE_URL") or None
 # ── OpenAI (and compatible providers) ─────────────────────────────────────────
 
 OPENAI_API_KEY: str = os.environ.get("OPENAI_API_KEY", "")
-# Base URL for OpenAI or any OpenAI-compatible endpoint (Ollama, DeepSeek, etc.)
-# Default points to official OpenAI; override for custom endpoints.
-OPENAI_BASE_URL: str = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com")
+_openai_base_url_env = os.environ.get("OPENAI_BASE_URL")
+# Base URL for official OpenAI or any OpenAI-compatible endpoint.
+# Accepts either a full API prefix (for example ".../v1") or a bare forwarded
+# domain; the client normalises bare domains to the OpenAI-style /v1 path.
+OPENAI_BASE_URL: str = _openai_base_url_env or "https://api.openai.com"
+
+# Shared proxy credentials for third-party relay services.
+# When set, both OpenAI and Anthropic protocol clients reuse the same values.
+LLM_API_KEY: str = os.environ.get("LLM_API_KEY") or ANTHROPIC_API_KEY or OPENAI_API_KEY
+LLM_BASE_URL: str | None = (
+    os.environ.get("LLM_BASE_URL")
+    or ANTHROPIC_BASE_URL
+    or _openai_base_url_env
+    or None
+)
 
 
 # ── Default model ──────────────────────────────────────────────────────────────
@@ -77,26 +89,47 @@ MASTERY_THRESHOLDS: dict[str, float] = {
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
 def provider_for(model: str) -> str:
-    """Return 'anthropic' or 'openai' based on model name prefix."""
+    """Return 'anthropic' or 'openai' based on the model name prefix."""
     return "anthropic" if model.strip().startswith("claude") else "openai"
+
+
+def api_key_for(provider: str) -> str:
+    """Return the API key for the selected provider, preferring shared relay config."""
+    if LLM_API_KEY:
+        return LLM_API_KEY
+    return ANTHROPIC_API_KEY if provider == "anthropic" else OPENAI_API_KEY
+
+
+def base_url_for(provider: str) -> str | None:
+    """Return the base URL for the selected provider, preferring shared relay config."""
+    if LLM_BASE_URL:
+        return LLM_BASE_URL
+    return ANTHROPIC_BASE_URL if provider == "anthropic" else OPENAI_BASE_URL
+
+
+def _is_placeholder_key(api_key: str) -> bool:
+    return (
+        not api_key
+        or api_key.startswith("sk-xxx")
+        or api_key.startswith("sk-ant-xxx")
+    )
 
 
 def validate(model: str | None = None):
     """Raise early if required config for the chosen provider is missing."""
     used_model = model or DEFAULT_MODEL
     provider = provider_for(used_model)
+    api_key = api_key_for(provider)
 
-    if provider == "anthropic":
-        if not ANTHROPIC_API_KEY or ANTHROPIC_API_KEY.startswith("sk-ant-xxx"):
+    if _is_placeholder_key(api_key):
+        if provider == "anthropic":
             raise EnvironmentError(
-                "ANTHROPIC_API_KEY is not set. "
-                "Add it to your .env file: ANTHROPIC_API_KEY=sk-ant-..."
+                f"API key is not set for model '{used_model}'. "
+                "Add LLM_API_KEY or ANTHROPIC_API_KEY to your .env file."
             )
-    else:
-        if not OPENAI_API_KEY or OPENAI_API_KEY.startswith("sk-xxx"):
-            raise EnvironmentError(
-                f"OPENAI_API_KEY is not set (required for model '{used_model}'). "
-                "Add it to your .env file: OPENAI_API_KEY=sk-..."
-            )
+        raise EnvironmentError(
+            f"API key is not set for model '{used_model}'. "
+            "Add LLM_API_KEY or OPENAI_API_KEY to your .env file."
+        )
 
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)

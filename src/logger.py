@@ -67,6 +67,7 @@ def setup(verbose: bool = False):
 
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("anthropic").setLevel(logging.WARNING)
+    logging.getLogger("openai").setLevel(logging.WARNING)
 
     log = logging.getLogger(__name__)
     log.info("Logging initialised — file: %s  verbose: %s", log_path, verbose)

@@ -2,12 +2,13 @@
 File: agents/client.py
 
 Purpose:
-    Thin wrapper around the Anthropic SDK that supports custom base URLs
-    (for self-hosted or proxy deployments) and provides a simple call()
-    interface used by all agents in this project.
+    Provider-aware wrapper around the Anthropic SDK and OpenAI-compatible
+    chat-completions APIs. Supports custom base URLs for self-hosted,
+    proxy, or third-party forwarded domains while preserving the same
+    call() interface used by all agents in this project.
 
 Responsibilities:
-    - Initialise the Anthropic client once (singleton)
+    - Initialise provider clients once (singleton per transport)
     - Expose a synchronous call() helper that returns the text response
     - Handle JSON extraction from model responses
     - Surface clear error messages when the API is misconfigured
@@ -16,9 +17,10 @@ What this file does NOT do:
     - Business logic or prompt construction (that lives in each agent file)
     - Retry logic beyond what the SDK provides
     - Streaming (not needed for CLI batch calls)
+    - Provider-specific advanced features beyond plain text generation
 
 Inputs:
-    - ANTHROPIC_API_KEY and ANTHROPIC_BASE_URL from config
+    - Shared or provider-specific config from src.config
     - system prompt, user messages, max_tokens per call
 
 Outputs:
@@ -28,30 +30,71 @@ Outputs:
 import json
 import re
 import time
-from typing import Optional
+from typing import Any
+from urllib.parse import urlsplit, urlunsplit
 
-import anthropic
+try:
+    import anthropic
+except ImportError:  # pragma: no cover - depends on runtime environment
+    anthropic = None
+
+try:
+    from openai import OpenAI
+except ImportError:  # pragma: no cover - depends on runtime environment
+    OpenAI = None
 
 from src import config
 from src.logger import get_logger
 
 log = get_logger(__name__)
 
-# ── Singleton client ───────────────────────────────────────────────────────────
+# ── Singleton clients ──────────────────────────────────────────────────────────
 
-_client: Optional[anthropic.Anthropic] = None
+_anthropic_client: Any = None
+_openai_client: Any = None
 
 
-def get_client() -> anthropic.Anthropic:
-    global _client
-    if _client is None:
-        kwargs: dict = {"api_key": config.ANTHROPIC_API_KEY}
-        if config.ANTHROPIC_BASE_URL:
-            kwargs["base_url"] = config.ANTHROPIC_BASE_URL.rstrip("/")
-            log.info("Using custom base URL: %s", config.ANTHROPIC_BASE_URL)
-        _client = anthropic.Anthropic(**kwargs)
-        log.debug("Anthropic client initialised (model=%s)", config.ANTHROPIC_MODEL)
-    return _client
+def _get_anthropic_client():
+    global _anthropic_client
+    if _anthropic_client is None:
+        if anthropic is None:
+            raise ModuleNotFoundError(
+                "anthropic package is not installed. Install dependencies from requirements.txt."
+            )
+
+        kwargs: dict[str, Any] = {"api_key": config.api_key_for("anthropic")}
+        base_url = config.base_url_for("anthropic")
+        if base_url:
+            kwargs["base_url"] = base_url.rstrip("/")
+            log.info("Using Anthropic base URL: %s", base_url)
+        _anthropic_client = anthropic.Anthropic(**kwargs)
+        log.debug("Anthropic client initialised")
+    return _anthropic_client
+
+
+def _get_openai_client():
+    global _openai_client
+    if _openai_client is None:
+        if OpenAI is None:
+            raise ModuleNotFoundError(
+                "openai package is not installed. Install dependencies from requirements.txt."
+            )
+
+        kwargs: dict[str, Any] = {"api_key": config.api_key_for("openai")}
+        base_url = _normalise_openai_base_url(config.base_url_for("openai") or "")
+        if base_url:
+            kwargs["base_url"] = base_url
+            log.info("Using OpenAI-compatible base URL: %s", base_url)
+        _openai_client = OpenAI(**kwargs)
+        log.debug("OpenAI-compatible client initialised")
+    return _openai_client
+
+
+def get_client(model: str | None = None):
+    provider = config.provider_for(model or config.DEFAULT_MODEL)
+    if provider == "anthropic":
+        return _get_anthropic_client()
+    return _get_openai_client()
 
 
 # ── Core call helper ───────────────────────────────────────────────────────────
@@ -63,7 +106,7 @@ def call(
     model: str | None = None,
 ) -> str:
     """
-    Send a single system+user message pair to Claude and return the text response.
+    Send a single system+user message pair and return the text response.
 
     Args:
         system:     System prompt for the agent.
@@ -74,49 +117,85 @@ def call(
     Returns:
         The model's text response as a string.
     """
-    used_model = model or config.ANTHROPIC_MODEL
-    client = get_client()
+    used_model = model or config.DEFAULT_MODEL
+    provider = config.provider_for(used_model)
+    client = get_client(used_model)
 
     log.debug(
         "── API CALL ──────────────────────────────────────\n"
+        "provider   : %s\n"
         "model      : %s\n"
         "max_tokens : %d\n"
         "system     :\n%s\n"
         "user       :\n%s\n"
         "──────────────────────────────────────────────────",
-        used_model, max_tokens,
+        provider,
+        used_model,
+        max_tokens,
         _indent(system, 4),
         _indent(user, 4),
     )
 
     t0 = time.perf_counter()
-    response = client.messages.create(
-        model=used_model,
-        max_tokens=max_tokens,
-        system=system,
-        messages=[{"role": "user", "content": user}],
-    )
+    if provider == "anthropic":
+        response = client.messages.create(
+            model=used_model,
+            max_tokens=max_tokens,
+            system=system,
+            messages=[{"role": "user", "content": user}],
+        )
+        text = ""
+        for block in response.content:
+            if hasattr(block, "text"):
+                text = block.text
+                break
+        usage = response.usage
+        input_tokens = getattr(usage, "input_tokens", "?")
+        output_tokens = getattr(usage, "output_tokens", "?")
+    else:
+        response = client.chat.completions.create(
+            model=used_model,
+            max_tokens=max_tokens,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+        )
+        message = response.choices[0].message if response.choices else None
+        text = message.content if message and message.content else ""
+        usage = response.usage
+        input_tokens = getattr(usage, "prompt_tokens", "?")
+        output_tokens = getattr(usage, "completion_tokens", "?")
     elapsed = time.perf_counter() - t0
 
-    text = ""
-    for block in response.content:
-        if hasattr(block, "text"):
-            text = block.text
-            break
-
-    usage = response.usage
     log.debug(
         "── API RESPONSE (%.2fs) ──────────────────────────\n"
-        "input_tokens : %d  output_tokens : %d\n"
+        "input_tokens : %s  output_tokens : %s\n"
         "response     :\n%s\n"
         "──────────────────────────────────────────────────",
         elapsed,
-        getattr(usage, "input_tokens", "?"),
-        getattr(usage, "output_tokens", "?"),
+        input_tokens,
+        output_tokens,
         _indent(text, 4),
     )
 
     return text
+
+
+def _normalise_openai_base_url(base_url: str) -> str:
+    """
+    Accept either a full OpenAI-compatible API prefix or a bare forwarded domain.
+    Bare domains are normalised to /v1 so reverse proxies can be configured as
+    https://llm.example.com -> https://api.openai.com/v1.
+    """
+    cleaned = (base_url or "").strip().rstrip("/")
+    if not cleaned:
+        return "https://api.openai.com/v1"
+
+    parsed = urlsplit(cleaned)
+    if not parsed.path or parsed.path == "/":
+        return urlunsplit(parsed._replace(path="/v1"))
+    return cleaned
 
 
 def _indent(text: str, spaces: int) -> str:

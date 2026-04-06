@@ -25,7 +25,7 @@
 | 组件       | 实现方案                                      |
 | ---------- | --------------------------------------------- |
 | 存储       | SQLite（知识图谱 + 用户状态 + 复习调度）       |
-| AI 调用    | Claude Sonnet，通过自定义 domain 连接          |
+| AI 调用    | Anthropic 或 OpenAI-compatible，通过自定义 domain / 代理连接 |
 | 交互       | CLI                                           |
 | Agent 编排 | 本地脚本，正向 + 反向 Agent 串联调用           |
 
