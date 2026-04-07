@@ -124,3 +124,17 @@ The file-level comment defines intent.
 The code is an implementation of that intent.
 
 Your job is to align understanding, explanation, and suggestions with documented intent.
+
+---
+
+11. Design-First Workflow (MUST)
+
+Before implementing any new feature or significant change:
+
+MUST present the full design / approach to the user for discussion and confirmation FIRST.
+
+Do NOT start writing code, modifying files, or creating schemas until the user explicitly approves.
+
+This includes: new modules, schema changes, architecture decisions, agent prompt designs, and CLI command structures.
+
+The workflow is: Discuss → Confirm → Implement. Never skip the "Confirm" step.

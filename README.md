@@ -1,6 +1,10 @@
 # Learning Directed Graph
 
-递归学习图谱 CLI。当前可执行入口是 `python main.py ...`。
+递归学习图谱 CLI。当前标准入口是 `python main.py ...`。
+
+兼容入口：
+- `python learn ...` 会转发到完整 CLI
+- `python goal ...` 会直接进入 `goal` 子命令
 
 ## 安装
 
@@ -9,6 +13,8 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
+
+如果直接运行命令时看到 `ModuleNotFoundError: No module named 'typer'`，说明当前解释器还没安装本项目依赖，先执行上面的安装步骤。
 
 ## 配置
 
@@ -27,7 +33,6 @@ DEFAULT_MODEL=claude-sonnet-4-6
 - 模型协议按 `DEFAULT_MODEL` 自动判断：
   - `claude-*` 走 Anthropic 协议
   - 其他模型走 OpenAI-compatible 协议
-- `OPENAI` 这一路如果只给裸 domain，会自动补成 `/v1`。
 
 ### 可用环境变量
 
@@ -40,10 +45,6 @@ DEFAULT_MODEL=claude-sonnet-4-6
 | `MAX_DECOMPOSE_DEPTH` | `6` | 最大递归拆解深度 |
 | `MAX_DECOMPOSE_RETRIES` | `2` | 每层拆解最大重试次数 |
 | `ATOM_MAX_MINUTES` | `15` | 原子知识点最大预估学习时间 |
-| `ANTHROPIC_API_KEY` | 无 | Anthropic 单独 key，作为 fallback |
-| `ANTHROPIC_BASE_URL` | 无 | Anthropic 单独 domain，作为 fallback |
-| `OPENAI_API_KEY` | 无 | OpenAI 单独 key，作为 fallback |
-| `OPENAI_BASE_URL` | `https://api.openai.com` | OpenAI 单独 domain，作为 fallback |
 
 ## 命令总览
 
@@ -56,6 +57,10 @@ python main.py goal new "学会 Kubernetes 集群管理" --domains "Linux,Docker
 python main.py goal new --help
 python main.py goal list
 python main.py goal list --help
+python main.py goal remove <goal-id>
+python main.py goal remove --help
+python main.py goal export <goal-id>
+python main.py goal export --help
 python main.py goal tree <goal-id>
 python main.py goal tree --help
 python main.py goal nodes <goal-id>
@@ -72,6 +77,8 @@ python main.py init --help
 python main.py goal --help
 python main.py goal new --help
 python main.py goal list --help
+python main.py goal remove --help
+python main.py goal export --help
 python main.py goal tree --help
 python main.py goal nodes --help
 python main.py status --help
@@ -123,7 +130,21 @@ python main.py goal list [--user "<user_id>"]
 参数：
 - `--user`, `-u`：可选，用户 ID，默认 `default`
 
-### 4. 查看目标树
+### 4. 删除学习目标
+
+```bash
+python main.py goal remove "<goal_id_or_prefix>" [--user "<user_id>"] [--yes]
+```
+
+参数：
+- `goal_id_or_prefix`：必填，完整 Goal ID 或前缀
+- `--user`, `-u`：可选，用户 ID，默认 `default`
+- `--yes`, `-y`：可选，跳过确认提示，直接删除
+
+说明：
+- 会同时删除该目标下的知识点、依赖边、学习状态和复习计划。
+
+### 5. 查看目标树
 
 ```bash
 python main.py goal tree "<goal_id_or_prefix>" [--user "<user_id>"]
@@ -134,9 +155,25 @@ python main.py goal tree "<goal_id_or_prefix>" [--user "<user_id>"]
 - `--user`, `-u`：可选，用户 ID，默认 `default`
 
 说明：
-- `--user` 当前不参与解析目标 ID，但命令保留了这个参数形态。
+- `--user` 会参与目标 ID 解析，只会在该用户的目标中匹配前缀。
 
-### 5. 查看学习顺序节点
+### 6. 导出 draw.io 节点图
+
+```bash
+python main.py goal export "<goal_id_or_prefix>" [--user "<user_id>"] [--output "<path.drawio>"] [--atomic-only]
+```
+
+参数：
+- `goal_id_or_prefix`：必填，完整 Goal ID 或前缀
+- `--user`, `-u`：可选，用户 ID，默认 `default`
+- `--output`, `-o`：可选，输出文件路径；默认写到 `exports/`
+- `--atomic-only`：可选，只导出原子知识点
+
+说明：
+- 输出格式为原生 `.drawio` XML，可直接在 draw.io / diagrams.net 打开。
+- 默认同时导出拆解树关系和 prerequisite / analogy 边。
+
+### 7. 查看学习顺序节点
 
 ```bash
 python main.py goal nodes "<goal_id_or_prefix>" [--user "<user_id>"]
@@ -146,7 +183,7 @@ python main.py goal nodes "<goal_id_or_prefix>" [--user "<user_id>"]
 - `goal_id_or_prefix`：必填，完整 Goal ID 或前缀
 - `--user`, `-u`：可选，用户 ID，默认 `default`
 
-### 6. 查看今日学习状态
+### 8. 查看今日学习状态
 
 ```bash
 python main.py status [--user "<user_id>"] [--verbose]
@@ -180,6 +217,8 @@ python main.py goal new "学会 Kubernetes 集群管理" --domains "Linux,Docker
 
 ```bash
 python main.py goal list
+python main.py goal remove <goal-id>
+python main.py goal export <goal-id>
 python main.py goal tree <goal-id>
 python main.py goal nodes <goal-id>
 ```

@@ -27,6 +27,7 @@ Outputs:
     - Raw text string from the model
 """
 
+import ast
 import json
 import re
 import time
@@ -104,6 +105,7 @@ def call(
     user: str,
     max_tokens: int = 4096,
     model: str | None = None,
+    expect_json: bool = False,
 ) -> str:
     """
     Send a single system+user message pair and return the text response.
@@ -113,6 +115,8 @@ def call(
         user:       User turn content.
         max_tokens: Token budget for the response.
         model:      Override the default model from config.
+        expect_json: Hint that the caller expects JSON output. Used to enable
+                     provider-specific compatibility features where possible.
 
     Returns:
         The model's text response as a string.
@@ -152,32 +156,59 @@ def call(
         usage = response.usage
         input_tokens = getattr(usage, "input_tokens", "?")
         output_tokens = getattr(usage, "output_tokens", "?")
+        finish_reason = getattr(response, "stop_reason", None)
     else:
-        response = client.chat.completions.create(
-            model=used_model,
-            max_tokens=max_tokens,
-            messages=[
+        request_kwargs: dict[str, Any] = {
+            "model": used_model,
+            "max_tokens": max_tokens,
+            "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
-        )
-        message = response.choices[0].message if response.choices else None
-        text = message.content if message and message.content else ""
+        }
+        if expect_json:
+            request_kwargs["response_format"] = {"type": "json_object"}
+
+        try:
+            response = client.chat.completions.create(**request_kwargs)
+        except Exception as exc:
+            if expect_json and _is_unsupported_json_mode_error(exc):
+                log.warning(
+                    "OpenAI-compatible endpoint rejected response_format=json_object; retrying without JSON mode"
+                )
+                request_kwargs.pop("response_format", None)
+                response = client.chat.completions.create(**request_kwargs)
+            else:
+                raise
+
+        choice = response.choices[0] if response.choices else None
+        message = choice.message if choice else None
+        text = _extract_openai_message_text(message)
         usage = response.usage
         input_tokens = getattr(usage, "prompt_tokens", "?")
         output_tokens = getattr(usage, "completion_tokens", "?")
+        finish_reason = getattr(choice, "finish_reason", None) if choice else None
     elapsed = time.perf_counter() - t0
 
     log.debug(
         "── API RESPONSE (%.2fs) ──────────────────────────\n"
-        "input_tokens : %s  output_tokens : %s\n"
+        "input_tokens : %s  output_tokens : %s  finish_reason : %s\n"
         "response     :\n%s\n"
         "──────────────────────────────────────────────────",
         elapsed,
         input_tokens,
         output_tokens,
+        finish_reason,
         _indent(text, 4),
     )
+    if not text.strip():
+        log.warning(
+            "Model returned empty text content (provider=%s, model=%s, finish_reason=%s, output_tokens=%s)",
+            provider,
+            used_model,
+            finish_reason,
+            output_tokens,
+        )
 
     return text
 
@@ -216,61 +247,132 @@ def call_json(
     Raises:
         ValueError: if the response cannot be parsed as JSON.
     """
-    raw = call(system, user, max_tokens=max_tokens, model=model)
+    raw = call(system, user, max_tokens=max_tokens, model=model, expect_json=True)
     return _extract_json(raw)
 
 
 def _extract_json(text: str) -> dict | list:
     """
-    Extract JSON from a model response that may be wrapped in markdown fences.
+    Extract JSON from a model response that may be wrapped in markdown fences
+    or expressed as JSON-like Python literals.
 
     Strategy:
-      1. Try to find a ```json ... ``` block
-      2. Try to find a ``` ... ``` block
-      3. Try to parse the whole text as-is
-      4. Try to find the first {...} or [...] balanced substring
+      1. Try fenced blocks first
+      2. Try the whole text as-is
+      3. Try the first balanced {...} or [...] substring
+      4. For each candidate, parse as strict JSON, then as a Python literal
     """
-    # Strip markdown fences
-    fence_match = re.search(r"```(?:json)?\s*([\s\S]*?)```", text, re.IGNORECASE)
-    if fence_match:
+    if not text or not text.strip():
+        raise ValueError("Model returned empty response when JSON was expected.")
+
+    candidates: list[str] = []
+
+    def add_candidate(candidate: str):
+        candidate = candidate.strip().lstrip("\ufeff")
+        if candidate and candidate not in candidates:
+            candidates.append(candidate)
+
+    for fence_match in re.finditer(r"```(?:json)?\s*([\s\S]*?)```", text, re.IGNORECASE):
+        add_candidate(fence_match.group(1))
+    add_candidate(text)
+
+    balanced = _find_balanced_json_substring(text)
+    if balanced:
+        add_candidate(balanced)
+
+    for candidate in candidates:
+        parsed = _parse_json_like(candidate)
+        if parsed is not None:
+            return parsed
+
+        inner_balanced = _find_balanced_json_substring(candidate)
+        if inner_balanced and inner_balanced != candidate:
+            parsed = _parse_json_like(inner_balanced)
+            if parsed is not None:
+                return parsed
+
+    raise ValueError(f"Could not extract JSON from model response:\n{text[:500]}")
+
+
+def _parse_json_like(text: str) -> dict | list | None:
+    stripped = text.strip().lstrip("\ufeff")
+    if not stripped:
+        return None
+
+    for parser in (json.loads, ast.literal_eval):
         try:
-            return json.loads(fence_match.group(1).strip())
-        except json.JSONDecodeError:
-            pass
+            parsed = parser(stripped)
+        except (json.JSONDecodeError, SyntaxError, ValueError):
+            continue
+        if isinstance(parsed, (dict, list)):
+            return parsed
+    return None
 
-    # Try raw text
-    try:
-        return json.loads(text.strip())
-    except json.JSONDecodeError:
-        pass
 
-    # Find first JSON object or array
+def _find_balanced_json_substring(text: str) -> str | None:
     for start_char, end_char in [("{", "}"), ("[", "]")]:
         start = text.find(start_char)
         if start == -1:
             continue
+
         depth = 0
-        in_string = False
+        quote_char: str | None = None
         escape = False
+
         for i, ch in enumerate(text[start:], start):
             if escape:
                 escape = False
                 continue
-            if ch == "\\" and in_string:
+            if ch == "\\" and quote_char:
                 escape = True
                 continue
-            if ch == '"' and not escape:
-                in_string = not in_string
+            if ch in ('"', "'"):
+                if quote_char is None:
+                    quote_char = ch
+                    continue
+                if quote_char == ch:
+                    quote_char = None
+                    continue
+            if quote_char is not None:
                 continue
-            if not in_string:
-                if ch == start_char:
-                    depth += 1
-                elif ch == end_char:
-                    depth -= 1
-                    if depth == 0:
-                        try:
-                            return json.loads(text[start:i+1])
-                        except json.JSONDecodeError:
-                            break
 
-    raise ValueError(f"Could not extract JSON from model response:\n{text[:500]}")
+            if ch == start_char:
+                depth += 1
+            elif ch == end_char:
+                depth -= 1
+                if depth == 0:
+                    return text[start:i + 1]
+    return None
+
+
+def _extract_openai_message_text(message: Any) -> str:
+    if not message:
+        return ""
+
+    content = getattr(message, "content", "")
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts: list[str] = []
+        for part in content:
+            if isinstance(part, str):
+                parts.append(part)
+                continue
+            if isinstance(part, dict):
+                text = part.get("text")
+                if isinstance(text, str):
+                    parts.append(text)
+                continue
+
+            text = getattr(part, "text", None)
+            if isinstance(text, str):
+                parts.append(text)
+        return "".join(parts)
+    if content is None:
+        return ""
+    return str(content)
+
+
+def _is_unsupported_json_mode_error(exc: Exception) -> bool:
+    message = str(exc).lower()
+    return "response_format" in message or "json_object" in message

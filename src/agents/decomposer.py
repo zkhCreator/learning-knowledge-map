@@ -204,7 +204,7 @@ def decompose_goal(
         List of atomic (leaf) knowledge_node dicts.
     """
     user_domains = user_domains or []
-    log = progress_cb or (lambda msg: print(msg))
+    progress = progress_cb or (lambda msg: print(msg))
 
     # Create the root node (non-atomic placeholder)
     root_node = db.create_node(
@@ -217,7 +217,7 @@ def decompose_goal(
     # Link goal → root node
     db.update_goal(goal_id, root_node=root_node["id"], status="active")
 
-    log(f"🌱 开始拆解：{root_title}")
+    progress(f"🌱 开始拆解：{root_title}")
 
     atomic_nodes: list[dict] = []
 
@@ -230,10 +230,10 @@ def decompose_goal(
         user_domains=user_domains,
         depth=1,
         atomic_nodes=atomic_nodes,
-        log=log,
+        progress=progress,
     )
 
-    log(f"\n✅ 拆解完成，共生成 {len(atomic_nodes)} 个原子知识点")
+    progress(f"\n✅ 拆解完成，共生成 {len(atomic_nodes)} 个原子知识点")
     return atomic_nodes
 
 
@@ -246,11 +246,11 @@ def _recurse(
     user_domains: list[str],
     depth: int,
     atomic_nodes: list[dict],
-    log: Callable[[str], None],
+    progress: Callable[[str], None],
 ):
     """Recursive helper that decomposes a single node and persists children."""
     indent = "  " * depth
-    log(f"{indent}📋 正在拆解：{parent_title}")
+    progress(f"{indent}📋 正在拆解：{parent_title}")
 
     feedback = ""
     children_data: list[dict] = []
@@ -271,15 +271,34 @@ def _recurse(
                 feedback=feedback,
             )
         except Exception as e:
-            log.error("[depth=%d] Forward Agent failed: %s", depth, e)
-            log(f"{indent}⚠️  正向 Agent 调用失败: {e}")
-            break
+            if attempt == config.MAX_DECOMPOSE_RETRIES:
+                log.error("[depth=%d] Forward Agent failed: %s", depth, e)
+                progress(f"{indent}⚠️  正向 Agent 调用失败: {e}")
+                break
+            log.warning(
+                "[depth=%d] Forward Agent failed on attempt %d/%d: %s — retrying",
+                depth,
+                attempt + 1,
+                config.MAX_DECOMPOSE_RETRIES + 1,
+                e,
+            )
+            progress(f"{indent}⚠️  正向 Agent 调用失败: {e}，正在重试...")
+            continue
 
         children_data = forward_result.get("children", [])
         if not children_data:
-            log.warning("[depth=%d] Forward Agent returned empty children list", depth)
-            log(f"{indent}⚠️  正向 Agent 返回空列表，跳过")
-            break
+            if attempt == config.MAX_DECOMPOSE_RETRIES:
+                log.warning("[depth=%d] Forward Agent returned empty children list", depth)
+                progress(f"{indent}⚠️  正向 Agent 返回空列表，跳过")
+                break
+            log.warning(
+                "[depth=%d] Forward Agent returned empty children list on attempt %d/%d — retrying",
+                depth,
+                attempt + 1,
+                config.MAX_DECOMPOSE_RETRIES + 1,
+            )
+            progress(f"{indent}⚠️  正向 Agent 返回空列表，正在重试...")
+            continue
 
         log.info(
             "[depth=%d] Forward Agent returned %d children: %s",
@@ -292,7 +311,7 @@ def _recurse(
             depth,
             json.dumps(children_data, ensure_ascii=False, indent=2),
         )
-        log(f"{indent}   正向 Agent 返回 {len(children_data)} 个子节点")
+        progress(f"{indent}   正向 Agent 返回 {len(children_data)} 个子节点")
 
         # Force-atomic if at max depth
         if depth >= config.MAX_DECOMPOSE_DEPTH:
@@ -306,7 +325,7 @@ def _recurse(
             review = reverse_review(parent_title, children_data, user_domains)
         except Exception as e:
             log.error("[depth=%d] Reverse Agent failed: %s — accepting forward result", depth, e)
-            log(f"{indent}⚠️  反向 Agent 调用失败: {e}，直接采用正向结果")
+            progress(f"{indent}⚠️  反向 Agent 调用失败: {e}，直接采用正向结果")
             review = {"approved": True, "issues": [], "suggestions": ""}
 
         log.debug(
@@ -318,7 +337,7 @@ def _recurse(
 
         if review.get("approved", True):
             log.info("[depth=%d] Reverse Agent approved the plan ✓", depth)
-            log(f"{indent}   ✓ 反向 Agent 审核通过")
+            progress(f"{indent}   ✓ 反向 Agent 审核通过")
             break
         else:
             issues = review.get("issues", [])
@@ -327,12 +346,12 @@ def _recurse(
                 "[depth=%d] Reverse Agent rejected — %d issues: %s",
                 depth, len(issues), issues,
             )
-            log(f"{indent}   ✗ 反向 Agent 发现 {len(issues)} 个问题，重新拆解...")
+            progress(f"{indent}   ✗ 反向 Agent 发现 {len(issues)} 个问题，重新拆解...")
             for issue in issues[:3]:
-                log(f"{indent}     • {issue}")
+                progress(f"{indent}     • {issue}")
             if attempt == config.MAX_DECOMPOSE_RETRIES:
                 log.warning("[depth=%d] Max retries reached — using last forward result", depth)
-                log(f"{indent}   ⚡ 达到最大重试次数，采用当前方案")
+                progress(f"{indent}   ⚡ 达到最大重试次数，采用当前方案")
 
     if not children_data:
         return
@@ -391,7 +410,7 @@ def _recurse(
             continue
 
         if child_data.get("is_atomic", True):
-            log(f"{indent}   🔵 原子节点：{child_node['title']} ({child_data.get('est_minutes', 10)} min)")
+            progress(f"{indent}   🔵 原子节点：{child_node['title']} ({child_data.get('est_minutes', 10)} min)")
             atomic_nodes.append(child_node)
         else:
             _recurse(
@@ -403,5 +422,5 @@ def _recurse(
                 user_domains=user_domains,
                 depth=depth + 1,
                 atomic_nodes=atomic_nodes,
-                log=log,
+                progress=progress,
             )

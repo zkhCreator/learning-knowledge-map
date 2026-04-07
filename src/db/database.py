@@ -119,12 +119,105 @@ CREATE TABLE IF NOT EXISTS review_schedule (
     created_at          TEXT NOT NULL
 );
 
+-- ── Learning phase tables ──────────────────────────────────────────────────
+
+-- Knowledge outlines (generated per node for learning phase)
+CREATE TABLE IF NOT EXISTS node_outlines (
+    id          TEXT PRIMARY KEY,
+    node_id     TEXT NOT NULL REFERENCES knowledge_nodes(id),
+    user_id     TEXT NOT NULL DEFAULT 'default',
+    sections    TEXT NOT NULL,  -- JSON: [{index, title, content, sources[], analogy, analogy_source_node, covered}]
+    status      TEXT NOT NULL DEFAULT 'draft',
+    -- 'draft' | 'validated' | 'active' | 'completed'
+    created_at  TEXT NOT NULL,
+    UNIQUE(node_id, user_id)
+);
+
+-- Learning sessions (Socratic dialogue sessions)
+CREATE TABLE IF NOT EXISTS learning_sessions (
+    id              TEXT PRIMARY KEY,
+    node_id         TEXT NOT NULL REFERENCES knowledge_nodes(id),
+    outline_id      TEXT NOT NULL REFERENCES node_outlines(id),
+    user_id         TEXT NOT NULL DEFAULT 'default',
+    progress        REAL NOT NULL DEFAULT 0.0,    -- 0.0-1.0 (fraction of sections covered)
+    covered_sections TEXT NOT NULL DEFAULT '[]',   -- JSON: [1, 3, 4] (section indexes)
+    status          TEXT NOT NULL DEFAULT 'active',
+    -- 'active' | 'summarised' | 'completed'
+    started_at      TEXT NOT NULL,
+    updated_at      TEXT NOT NULL
+);
+
+-- Chat messages within a learning session
+CREATE TABLE IF NOT EXISTS chat_messages (
+    id          TEXT PRIMARY KEY,
+    session_id  TEXT NOT NULL REFERENCES learning_sessions(id),
+    role        TEXT NOT NULL,   -- 'user' | 'assistant'
+    content     TEXT NOT NULL,
+    created_at  TEXT NOT NULL
+);
+
+-- ── Exam phase tables ─────────────────────────────────────────────────────
+
+-- Exam attempts
+CREATE TABLE IF NOT EXISTS exam_attempts (
+    id          TEXT PRIMARY KEY,
+    node_id     TEXT NOT NULL REFERENCES knowledge_nodes(id),
+    outline_id  TEXT REFERENCES node_outlines(id),
+    user_id     TEXT NOT NULL DEFAULT 'default',
+    total_score REAL,              -- average score across all questions
+    passed      INTEGER,           -- 1=passed, 0=failed
+    started_at  TEXT NOT NULL,
+    finished_at TEXT
+);
+
+-- Individual exam questions
+CREATE TABLE IF NOT EXISTS exam_questions (
+    id              TEXT PRIMARY KEY,
+    exam_id         TEXT NOT NULL REFERENCES exam_attempts(id),
+    question_type   TEXT NOT NULL DEFAULT 'short_answer',
+    -- 'multiple_choice' | 'short_answer' | 'scenario' | 'distinction'
+    question        TEXT NOT NULL,
+    options         TEXT,          -- JSON: for multiple_choice
+    expected_answer TEXT NOT NULL,
+    user_answer     TEXT,
+    score           REAL,          -- 0.0-1.0
+    source_section  INTEGER,       -- outline section index this Q came from (null if expansion)
+    is_expansion    INTEGER NOT NULL DEFAULT 0,  -- 1=expanded beyond outline
+    created_at      TEXT NOT NULL
+);
+
+-- Error notebook entries
+CREATE TABLE IF NOT EXISTS error_notebook (
+    id                  TEXT PRIMARY KEY,
+    user_id             TEXT NOT NULL DEFAULT 'default',
+    node_id             TEXT NOT NULL REFERENCES knowledge_nodes(id),
+    exam_id             TEXT NOT NULL REFERENCES exam_attempts(id),
+    question_id         TEXT NOT NULL REFERENCES exam_questions(id),
+    source_section_title TEXT,         -- which outline section
+    error_type          TEXT NOT NULL,
+    -- 'memory_confusion' | 'boundary_unclear' | 'fundamental_misunderstanding' | 'incomplete'
+    question            TEXT NOT NULL,
+    user_answer         TEXT NOT NULL,
+    correct_answer      TEXT NOT NULL,
+    explanation         TEXT,          -- why the answer was wrong + how to fix
+    related_node_ids    TEXT,          -- JSON: IDs of related knowledge nodes
+    related_node_titles TEXT,          -- JSON: titles for display
+    review_count        INTEGER DEFAULT 0,
+    last_reviewed       TEXT,
+    created_at          TEXT NOT NULL
+);
+
 -- Indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_nodes_goal    ON knowledge_nodes(goal_id);
 CREATE INDEX IF NOT EXISTS idx_edges_from    ON knowledge_edges(from_node);
 CREATE INDEX IF NOT EXISTS idx_edges_to      ON knowledge_edges(to_node);
 CREATE INDEX IF NOT EXISTS idx_review_user   ON review_schedule(user_id, status, scheduled_at);
 CREATE INDEX IF NOT EXISTS idx_state_user    ON user_knowledge_state(user_id, status);
+CREATE INDEX IF NOT EXISTS idx_outline_node  ON node_outlines(node_id, user_id);
+CREATE INDEX IF NOT EXISTS idx_session_node  ON learning_sessions(node_id, user_id, status);
+CREATE INDEX IF NOT EXISTS idx_chat_session  ON chat_messages(session_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_exam_node     ON exam_attempts(node_id, user_id);
+CREATE INDEX IF NOT EXISTS idx_errors_user   ON error_notebook(user_id, node_id);
 """
 
 
@@ -191,6 +284,64 @@ def update_goal(goal_id: str, **fields):
             f"UPDATE learning_goals SET {sets} WHERE id = ?",
             (*fields.values(), goal_id),
         )
+
+
+def delete_goal(goal_id: str) -> dict:
+    """
+    Delete a goal and every row that depends on its nodes.
+
+    This is implemented as a manual cascade so it works for existing SQLite
+    databases even though the current schema does not declare ON DELETE CASCADE.
+    """
+    deleted = {
+        "goals": 0,
+        "nodes": 0,
+        "edges": 0,
+        "states": 0,
+        "reviews": 0,
+    }
+
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT id FROM learning_goals WHERE id = ?", (goal_id,)
+        ).fetchone()
+        if not row:
+            return deleted
+
+        node_rows = conn.execute(
+            "SELECT id FROM knowledge_nodes WHERE goal_id = ?",
+            (goal_id,),
+        ).fetchall()
+        node_ids = [r["id"] for r in node_rows]
+
+        if node_ids:
+            placeholders = ",".join("?" for _ in node_ids)
+
+            deleted["reviews"] = conn.execute(
+                f"DELETE FROM review_schedule WHERE node_id IN ({placeholders})",
+                node_ids,
+            ).rowcount
+            deleted["states"] = conn.execute(
+                f"DELETE FROM user_knowledge_state WHERE node_id IN ({placeholders})",
+                node_ids,
+            ).rowcount
+            deleted["edges"] = conn.execute(
+                f"""DELETE FROM knowledge_edges
+                    WHERE from_node IN ({placeholders})
+                       OR to_node IN ({placeholders})""",
+                [*node_ids, *node_ids],
+            ).rowcount
+            deleted["nodes"] = conn.execute(
+                "DELETE FROM knowledge_nodes WHERE goal_id = ?",
+                (goal_id,),
+            ).rowcount
+
+        deleted["goals"] = conn.execute(
+            "DELETE FROM learning_goals WHERE id = ?",
+            (goal_id,),
+        ).rowcount
+
+    return deleted
 
 
 # ── Knowledge Nodes CRUD ───────────────────────────────────────────────────────
@@ -434,3 +585,282 @@ def complete_review(review_id: str, score: float, next_interval_days: int):
                WHERE id=?""",
             (_now(), score, next_interval_days, review_id),
         )
+
+
+# ── Node Outlines CRUD ────────────────────────────────────────────────────────
+
+def create_outline(node_id: str, sections: list[dict], user_id: str = "default") -> dict:
+    outline = {
+        "id": _id(),
+        "node_id": node_id,
+        "user_id": user_id,
+        "sections": json.dumps(sections, ensure_ascii=False),
+        "status": "draft",
+        "created_at": _now(),
+    }
+    with get_connection() as conn:
+        conn.execute(
+            """INSERT OR REPLACE INTO node_outlines
+               VALUES (:id,:node_id,:user_id,:sections,:status,:created_at)""",
+            outline,
+        )
+    return outline
+
+
+def get_outline(node_id: str, user_id: str = "default") -> Optional[dict]:
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT * FROM node_outlines WHERE node_id=? AND user_id=? ORDER BY created_at DESC LIMIT 1",
+            (node_id, user_id),
+        ).fetchone()
+    if not row:
+        return None
+    d = dict(row)
+    d["sections"] = json.loads(d["sections"] or "[]")
+    return d
+
+
+def update_outline(outline_id: str, **fields):
+    if "sections" in fields and isinstance(fields["sections"], list):
+        fields["sections"] = json.dumps(fields["sections"], ensure_ascii=False)
+    sets = ", ".join(f"{k} = ?" for k in fields)
+    with get_connection() as conn:
+        conn.execute(
+            f"UPDATE node_outlines SET {sets} WHERE id = ?",
+            (*fields.values(), outline_id),
+        )
+
+
+# ── Learning Sessions CRUD ────────────────────────────────────────────────────
+
+def create_learning_session(node_id: str, outline_id: str, user_id: str = "default") -> dict:
+    now = _now()
+    session = {
+        "id": _id(),
+        "node_id": node_id,
+        "outline_id": outline_id,
+        "user_id": user_id,
+        "progress": 0.0,
+        "covered_sections": json.dumps([]),
+        "status": "active",
+        "started_at": now,
+        "updated_at": now,
+    }
+    with get_connection() as conn:
+        conn.execute(
+            """INSERT INTO learning_sessions VALUES (
+                :id,:node_id,:outline_id,:user_id,:progress,
+                :covered_sections,:status,:started_at,:updated_at
+            )""",
+            session,
+        )
+    return session
+
+
+def get_active_session(node_id: str, user_id: str = "default") -> Optional[dict]:
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT * FROM learning_sessions WHERE node_id=? AND user_id=? AND status='active' LIMIT 1",
+            (node_id, user_id),
+        ).fetchone()
+    if not row:
+        return None
+    d = dict(row)
+    d["covered_sections"] = json.loads(d["covered_sections"] or "[]")
+    return d
+
+
+def update_session(session_id: str, covered_sections: list[int], progress: float, status: str | None = None):
+    fields = {
+        "covered_sections": json.dumps(covered_sections),
+        "progress": progress,
+        "updated_at": _now(),
+    }
+    if status:
+        fields["status"] = status
+    sets = ", ".join(f"{k} = ?" for k in fields)
+    with get_connection() as conn:
+        conn.execute(
+            f"UPDATE learning_sessions SET {sets} WHERE id = ?",
+            (*fields.values(), session_id),
+        )
+
+
+# ── Chat Messages CRUD ────────────────────────────────────────────────────────
+
+def add_chat_message(session_id: str, role: str, content: str) -> dict:
+    msg = {"id": _id(), "session_id": session_id, "role": role, "content": content, "created_at": _now()}
+    with get_connection() as conn:
+        conn.execute(
+            "INSERT INTO chat_messages VALUES (:id,:session_id,:role,:content,:created_at)", msg
+        )
+    return msg
+
+
+def get_chat_history(session_id: str, limit: int = 50) -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT * FROM chat_messages WHERE session_id=? ORDER BY created_at ASC LIMIT ?",
+            (session_id, limit),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+# ── Exam CRUD ──────────────────────────────────────────────────────────────────
+
+def create_exam(node_id: str, outline_id: str | None = None, user_id: str = "default") -> dict:
+    exam = {
+        "id": _id(),
+        "node_id": node_id,
+        "outline_id": outline_id,
+        "user_id": user_id,
+        "total_score": None,
+        "passed": None,
+        "started_at": _now(),
+        "finished_at": None,
+    }
+    with get_connection() as conn:
+        conn.execute(
+            "INSERT INTO exam_attempts VALUES (:id,:node_id,:outline_id,:user_id,:total_score,:passed,:started_at,:finished_at)",
+            exam,
+        )
+    return exam
+
+
+def add_exam_question(
+    exam_id: str,
+    question: str,
+    expected_answer: str,
+    question_type: str = "short_answer",
+    options: list | None = None,
+    source_section: int | None = None,
+    is_expansion: bool = False,
+) -> dict:
+    q = {
+        "id": _id(),
+        "exam_id": exam_id,
+        "question_type": question_type,
+        "question": question,
+        "options": json.dumps(options, ensure_ascii=False) if options else None,
+        "expected_answer": expected_answer,
+        "user_answer": None,
+        "score": None,
+        "source_section": source_section,
+        "is_expansion": 1 if is_expansion else 0,
+        "created_at": _now(),
+    }
+    with get_connection() as conn:
+        conn.execute(
+            """INSERT INTO exam_questions VALUES (
+                :id,:exam_id,:question_type,:question,:options,:expected_answer,
+                :user_answer,:score,:source_section,:is_expansion,:created_at
+            )""",
+            q,
+        )
+    return q
+
+
+def answer_exam_question(question_id: str, user_answer: str, score: float):
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE exam_questions SET user_answer=?, score=? WHERE id=?",
+            (user_answer, score, question_id),
+        )
+
+
+def finish_exam(exam_id: str, total_score: float, passed: bool):
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE exam_attempts SET total_score=?, passed=?, finished_at=? WHERE id=?",
+            (total_score, 1 if passed else 0, _now(), exam_id),
+        )
+
+
+def get_exam_questions(exam_id: str) -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT * FROM exam_questions WHERE exam_id=? ORDER BY created_at", (exam_id,)
+        ).fetchall()
+    result = []
+    for r in rows:
+        d = dict(r)
+        if d.get("options"):
+            d["options"] = json.loads(d["options"])
+        result.append(d)
+    return result
+
+
+# ── Error Notebook CRUD ────────────────────────────────────────────────────────
+
+def add_error(
+    node_id: str,
+    exam_id: str,
+    question_id: str,
+    source_section_title: str,
+    error_type: str,
+    question: str,
+    user_answer: str,
+    correct_answer: str,
+    explanation: str = "",
+    related_node_ids: list[str] | None = None,
+    related_node_titles: list[str] | None = None,
+    user_id: str = "default",
+) -> dict:
+    entry = {
+        "id": _id(),
+        "user_id": user_id,
+        "node_id": node_id,
+        "exam_id": exam_id,
+        "question_id": question_id,
+        "source_section_title": source_section_title,
+        "error_type": error_type,
+        "question": question,
+        "user_answer": user_answer,
+        "correct_answer": correct_answer,
+        "explanation": explanation,
+        "related_node_ids": json.dumps(related_node_ids or [], ensure_ascii=False),
+        "related_node_titles": json.dumps(related_node_titles or [], ensure_ascii=False),
+        "review_count": 0,
+        "last_reviewed": None,
+        "created_at": _now(),
+    }
+    with get_connection() as conn:
+        conn.execute(
+            """INSERT INTO error_notebook VALUES (
+                :id,:user_id,:node_id,:exam_id,:question_id,:source_section_title,
+                :error_type,:question,:user_answer,:correct_answer,:explanation,
+                :related_node_ids,:related_node_titles,:review_count,:last_reviewed,:created_at
+            )""",
+            entry,
+        )
+    return entry
+
+
+def list_errors(
+    user_id: str = "default",
+    node_id: str | None = None,
+    error_type: str | None = None,
+) -> list[dict]:
+    sql = "SELECT e.*, n.title as node_title FROM error_notebook e JOIN knowledge_nodes n ON n.id = e.node_id WHERE e.user_id = ?"
+    params: list = [user_id]
+    if node_id:
+        sql += " AND e.node_id = ?"
+        params.append(node_id)
+    if error_type:
+        sql += " AND e.error_type = ?"
+        params.append(error_type)
+    sql += " ORDER BY e.created_at DESC"
+    with get_connection() as conn:
+        rows = conn.execute(sql, params).fetchall()
+    result = []
+    for r in rows:
+        d = dict(r)
+        d["related_node_ids"] = json.loads(d["related_node_ids"] or "[]")
+        d["related_node_titles"] = json.loads(d["related_node_titles"] or "[]")
+        result.append(d)
+    return result
+
+
+def get_errors_for_node(node_id: str, user_id: str = "default") -> list[dict]:
+    """Get error notebook entries for a specific node (used during Ebbinghaus review)."""
+    return list_errors(user_id=user_id, node_id=node_id)

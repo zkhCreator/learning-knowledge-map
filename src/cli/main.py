@@ -14,6 +14,8 @@ Available commands:
     init                   Initialise the database
     goal new <title>       Create a new learning goal and decompose it
     goal list              List all goals
+    goal remove <id>       Remove a goal and all related learning data
+    goal export <id>       Export a goal graph to a draw.io diagram
     goal tree <id>         Show the knowledge graph for a goal
     goal nodes <id>        List atomic nodes in learning order
     status                 Show today's learning status (due reviews + next node)
@@ -157,7 +159,9 @@ def goal_new(
         f"\n[green]✓[/green] 共 {len(atomic_nodes)} 个原子知识点，"
         f"预计总学习时间 {sum(n.get('est_minutes', 0) for n in atomic_nodes)} 分钟"
     )
-    console.print(f"\n使用 [bold]learn goal tree {goal['id'][:8]}[/bold] 查看完整知识图谱")
+    console.print(
+        f"\n使用 [bold]python main.py goal tree {goal['id'][:8]}[/bold] 查看完整知识图谱"
+    )
 
 
 @goal_app.command("list")
@@ -167,7 +171,7 @@ def goal_list(user_id: str = typer.Option("default", "--user", "-u")):
     goals = db.list_goals(user_id=user_id)
 
     if not goals:
-        rprint("[yellow]暂无学习目标。使用 learn goal new '...' 创建一个。[/yellow]")
+        rprint("[yellow]暂无学习目标。使用 python main.py goal new '...' 创建一个。[/yellow]")
         return
 
     table = Table(show_header=True, header_style="bold cyan")
@@ -192,16 +196,90 @@ def goal_list(user_id: str = typer.Option("default", "--user", "-u")):
     console.print(table)
 
 
+@goal_app.command("remove")
+def goal_remove(
+    goal_id_prefix: str = typer.Argument(..., help="Goal ID 或前8位"),
+    user_id: str = typer.Option("default", "--user", "-u", help="用户 ID"),
+    yes: bool = typer.Option(False, "--yes", "-y", help="不询问，直接删除"),
+):
+    """删除目标及其关联的知识图谱、学习状态和复习计划。"""
+    from src.db import database as db
+
+    goal = _resolve_goal(goal_id_prefix, user_id=user_id)
+    if not goal:
+        return
+
+    node_count = len(db.list_nodes_for_goal(goal["id"]))
+    if not yes:
+        confirmed = typer.confirm(
+            f"确认删除目标 '{goal['title']}' ({goal['id'][:8]}) 吗？"
+            f" 这会同时删除 {node_count} 个知识点及其关联状态/复习记录"
+        )
+        if not confirmed:
+            console.print("[yellow]已取消删除。[/yellow]")
+            return
+
+    deleted = db.delete_goal(goal["id"])
+    if not deleted["goals"]:
+        console.print("[red]删除失败：目标不存在或已被删除。[/red]")
+        raise typer.Exit(1)
+
+    console.print(
+        f"[green]✓[/green] 已删除目标 [bold]{goal['title']}[/bold] ({goal['id'][:8]})"
+    )
+    console.print(
+        "[dim]"
+        f"已删除 {deleted['nodes']} 个知识点、"
+        f"{deleted['edges']} 条依赖边、"
+        f"{deleted['states']} 条学习状态、"
+        f"{deleted['reviews']} 条复习计划。"
+        "[/dim]"
+    )
+
+
+@goal_app.command("export")
+def goal_export(
+    goal_id_prefix: str = typer.Argument(..., help="Goal ID 或前8位"),
+    user_id: str = typer.Option("default", "--user", "-u", help="用户 ID"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="输出 .drawio 文件路径"),
+    atomic_only: bool = typer.Option(False, "--atomic-only", help="只导出原子知识点"),
+):
+    """导出为 draw.io / diagrams.net 可直接打开的节点图。"""
+    from src.graph import drawio
+
+    goal = _resolve_goal(goal_id_prefix, user_id=user_id)
+    if not goal:
+        return
+
+    output_path = output or str(drawio.default_drawio_path(goal))
+    try:
+        saved_path = drawio.export_goal_to_drawio(
+            goal_id=goal["id"],
+            output_path=output_path,
+            user_id=user_id,
+            atomic_only=atomic_only,
+        )
+    except ValueError as exc:
+        console.print(f"[red]导出失败：{exc}[/red]")
+        raise typer.Exit(1)
+
+    console.print(
+        f"[green]✓[/green] 已导出 draw.io 节点图：[bold]{saved_path}[/bold]"
+    )
+    console.print(
+        "[dim]可在 draw.io / diagrams.net 中直接打开该 .drawio 文件。[/dim]"
+    )
+
+
 @goal_app.command("tree")
 def goal_tree(
     goal_id_prefix: str = typer.Argument(..., help="Goal ID 或前8位"),
     user_id: str = typer.Option("default", "--user", "-u"),
 ):
     """以树状图展示目标的知识图谱结构。"""
-    from src.db import database as db
     from src.graph import dag
 
-    goal = _resolve_goal(goal_id_prefix)
+    goal = _resolve_goal(goal_id_prefix, user_id=user_id)
     if not goal:
         return
 
@@ -218,13 +296,13 @@ def goal_nodes(
     from src.db import database as db
     from src.graph import dag
 
-    goal = _resolve_goal(goal_id_prefix)
+    goal = _resolve_goal(goal_id_prefix, user_id=user_id)
     if not goal:
         return
 
     nodes = dag.topological_order(goal["id"])
     if not nodes:
-        rprint("[yellow]暂无知识点，请先运行 learn goal new 创建目标。[/yellow]")
+        rprint("[yellow]暂无知识点，请先运行 python main.py goal new 创建目标。[/yellow]")
         return
 
     table = Table(show_header=True, header_style="bold cyan")
@@ -317,15 +395,17 @@ def status(
                 f"{mastered}/{len(nodes)} 节点已掌握"
             )
     else:
-        console.print("\n[yellow]尚无学习目标。使用 learn goal new '...' 开始。[/yellow]")
+        console.print(
+            "\n[yellow]尚无学习目标。使用 python main.py goal new '...' 开始。[/yellow]"
+        )
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
-def _resolve_goal(goal_id_prefix: str) -> Optional[dict]:
-    """Find a goal by full ID or 8-char prefix."""
+def _resolve_goal(goal_id_prefix: str, user_id: str = "default") -> Optional[dict]:
+    """Find a goal by full ID or prefix for the selected user."""
     from src.db import database as db
-    goals = db.list_goals()
+    goals = db.list_goals(user_id=user_id)
     matches = [g for g in goals if g["id"].startswith(goal_id_prefix)]
     if not matches:
         rprint(f"[red]找不到 Goal ID 以 '{goal_id_prefix}' 开头的目标[/red]")
