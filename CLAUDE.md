@@ -138,3 +138,15 @@ Do NOT start writing code, modifying files, or creating schemas until the user e
 This includes: new modules, schema changes, architecture decisions, agent prompt designs, and CLI command structures.
 
 The workflow is: Discuss → Confirm → Implement. Never skip the "Confirm" step.
+
+12. Design Documentation Structure (MUST)
+
+All design documents MUST live in a dedicated `docs/` folder.
+
+Each major module or iteration gets its own file (e.g., `01-system-overview.md`, `02-plan-decomposer.md`).
+
+A `summary.md` file at the root of `docs/` serves as the index, listing all design files in order with a one-line description of each.
+
+When a new design iteration happens, create a new document or update the relevant existing one — do NOT pile everything into a single monolithic file.
+
+Always keep `summary.md` in sync after adding or modifying any design file.

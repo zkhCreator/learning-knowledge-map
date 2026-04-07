@@ -375,10 +375,17 @@ is_node_complete(node, user):
 
 **流程：**
 1. 正向 Agent 根据节点 title/description 生成大纲（3-8 个小节）
-2. 对每个小节，使用 **WebSearch** 搜索论文/权威知识来源，附加引用
-3. 利用用户已知领域进行 **类比桥接**：每个小节如果能关联到用户已掌握的知识，生成类比说明
-4. 反向 Agent 对大纲进行 **准确性校验**：检查知识点是否正确、是否过时、引用是否可靠
-5. 校验通过后持久化到 DB
+2. 对每个小节，Agent 自行判断是否需要 WebSearch（输出 `needs_search` 字段）
+3. 仅对 `needs_search: true` 的小节调用搜索 API，查找论文/权威来源
+4. 利用用户已知领域进行 **类比桥接**：每个小节如果能关联到用户已掌握的知识，生成类比说明
+5. 反向 Agent 对大纲进行 **准确性校验**：检查知识点是否正确、是否过时、引用是否可靠
+6. 校验通过后持久化到 DB
+
+**WebSearch 按需触发规则：**
+- **需要搜索**: 较新的知识（近 1-2 年）、Agent 对内容不确信的知识、涉及最新论文/标准的内容
+- **不需要搜索**: 经典基础知识（模型自身已高置信度掌握）、稳定不变的学科概念
+- **降级处理**: 如果未配置搜索 API key，跳过搜索环节，纯用模型自身知识生成大纲
+- **搜索 API**: 默认支持 Google Custom Search（免费 100 次/天），config 中可配置其他 provider
 
 **大纲数据结构：**
 ```json
@@ -389,12 +396,23 @@ is_node_complete(node, user):
       "index": 1,
       "title": "WAL 日志的基本原理",
       "content": "Write-Ahead Logging 的核心思想是...",
-      "sources": [
-        {"title": "ARIES: A Transaction Recovery Method...", "url": "https://..."},
-        {"title": "PostgreSQL WAL Internals", "url": "https://..."}
-      ],
+      "needs_search": false,
+      "sources": [],
       "analogy": "类似于你写代码前先在草稿纸上记录修改计划——先写日志，再执行操作",
       "analogy_source_node": "版本控制基础",
+      "covered": false
+    },
+    {
+      "index": 2,
+      "title": "WAL 在云原生数据库中的演进",
+      "content": "Aurora、Neon 等新一代云数据库对 WAL 的改造...",
+      "needs_search": true,
+      "sources": [
+        {"title": "Amazon Aurora: Design Considerations...", "url": "https://..."},
+        {"title": "Neon: Serverless Postgres Built for the Cloud", "url": "https://..."}
+      ],
+      "analogy": null,
+      "analogy_source_node": null,
       "covered": false
     }
   ]
@@ -495,12 +513,59 @@ is_node_complete(node, user):
 
 ---
 
-## 8. 待定 / 后续讨论事项
+## 8. 新增数据表（学习 + 考试 + 错题本）
+
+以下表在 §6 节点学习流程中使用，补充现有 schema：
+
+| 表名 | 用途 | 主要字段 |
+| ---- | ---- | -------- |
+| `node_outlines` | 每个节点的学习大纲 | node_id, user_id, sections(JSON), status(draft/validated/active/completed) |
+| `learning_sessions` | 苏格拉底对话会话 | node_id, outline_id, user_id, progress(0.0-1.0), covered_sections(JSON), status |
+| `chat_messages` | 对话历史 | session_id, role(user/assistant), content |
+| `exam_attempts` | 考试记录 | node_id, outline_id, user_id, total_score, passed |
+| `exam_questions` | 单题记录 | exam_id, question_type, question, expected_answer, user_answer, score, source_section, is_expansion |
+| `error_notebook` | 错题本 | node_id, exam_id, question_id, source_section_title, error_type, question, user_answer, correct_answer, explanation, related_node_ids, related_node_titles |
+
+---
+
+## 9. CLI 命令设计
+
+### 9.1 已实现命令
+
+```bash
+python main.py init                              # 初始化数据库
+python main.py goal new <title> [--domains ...]   # 创建学习目标，递归拆解
+python main.py goal list                          # 列出所有目标
+python main.py goal tree <goal-id>                # 树状图展示知识图谱
+python main.py goal nodes <goal-id>               # 按拓扑序列出原子节点
+python main.py status                             # 今日学习状态
+```
+
+### 9.2 待实现命令（学习 + 考试）
+
+```bash
+# 学习
+python main.py learn start <node-id>              # 开始学习：生成大纲 → 进入苏格拉底对话
+python main.py learn chat <node-id>               # 继续未完成的苏格拉底对话
+python main.py learn progress <node-id>           # 查看当前学习进度
+
+# 考试
+python main.py exam start <node-id>               # 开始考试（可跳过学习直接进入）
+python main.py exam review <exam-id>              # 查看某次考试的结果详情
+
+# 错题本
+python main.py errors list [--node <node-id>]     # 查看错题本（可按节点过滤）
+python main.py errors review <node-id>            # 重做某节点的历史错题
+```
+
+---
+
+## 10. 待定 / 后续讨论事项
 
 - [ ] Agent prompt 的具体模板设计
-- [ ] CLI 交互的具体命令设计（如 `learn`, `review`, `status`, `explore`）
 - [ ] QA 打分系统的具体评分标准（LLM 打分 vs 关键词匹配 vs 混合）
 - [ ] 概念指纹的标签体系是否需要预定义分类法
 - [ ] 多用户支持的需求和范围
 - [ ] 后续可能的 Web UI 迁移路径
 - [ ] 图谱可视化方案
+- [ ] 搜索 API 的具体 provider 选型和配置方式
