@@ -150,3 +150,24 @@ A `summary.md` file at the root of `docs/` serves as the index, listing all desi
 When a new design iteration happens, create a new document or update the relevant existing one — do NOT pile everything into a single monolithic file.
 
 Always keep `summary.md` in sync after adding or modifying any design file.
+
+13. Test-Driven Development Workflow (MUST)
+
+All new modules and significant changes MUST follow a TDD workflow:
+
+Workflow: Design → Test Cases → Coding → Run Tests → Confirm Coverage
+
+Step-by-step:
+1. After design is confirmed (Rule #11), write test cases FIRST, before any implementation code.
+2. Tests MUST live in a dedicated `tests/` folder, mirroring the `src/` structure (e.g., `tests/test_db.py` for `src/db/database.py`).
+3. Use `pytest` as the test framework.
+4. No real API calls in unit tests — mock all external calls (`llm.call`, `llm.call_json`, etc.) using `unittest.mock.patch`.
+5. Run `pytest` after implementation to confirm all tests pass before considering the task done.
+6. When adding a new feature to an existing module, add corresponding new tests to its test file.
+
+Tests MUST cover:
+- Happy path (normal expected behavior)
+- Edge cases (empty input, boundary values)
+- Error paths (invalid input, failed API calls)
+
+Do NOT consider an implementation complete until `pytest` passes.

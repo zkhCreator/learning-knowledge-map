@@ -13,3 +13,4 @@
 | 07 | [data-tables](07-data-tables.md) | 新增数据表：学习会话、对话、考试、错题本 |
 | 08 | [cli-commands](08-cli-commands.md) | CLI 命令设计：已实现 + 待实现命令 |
 | 09 | [pending-items](09-pending-items.md) | 待定 / 后续讨论事项 |
+| 10 | [mnemonic-strategy-layer](10-mnemonic-strategy-layer.md) | 助记策略层：认知偏好模型、记忆宫殿/逻辑链/叙事编码、与学习复习流程的集成 |

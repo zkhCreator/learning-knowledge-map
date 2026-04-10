@@ -218,6 +218,46 @@ CREATE INDEX IF NOT EXISTS idx_session_node  ON learning_sessions(node_id, user_
 CREATE INDEX IF NOT EXISTS idx_chat_session  ON chat_messages(session_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_exam_node     ON exam_attempts(node_id, user_id);
 CREATE INDEX IF NOT EXISTS idx_errors_user   ON error_notebook(user_id, node_id);
+
+-- ── Mnemonic strategy layer tables ───────────────────────────────────────
+
+-- User cognitive preference profile
+CREATE TABLE IF NOT EXISTS user_cognitive_profile (
+    user_id          TEXT PRIMARY KEY,
+    spatial_weight   REAL DEFAULT 0.33,
+    symbolic_weight  REAL DEFAULT 0.33,
+    narrative_weight REAL DEFAULT 0.34,
+    assessed         INTEGER DEFAULT 0,   -- 0=not assessed, 1=assessed
+    updated_at       TEXT NOT NULL
+);
+
+-- Mnemonic anchors (one per section per node per user)
+CREATE TABLE IF NOT EXISTS mnemonic_anchors (
+    id              TEXT PRIMARY KEY,
+    user_id         TEXT NOT NULL,
+    node_id         TEXT NOT NULL REFERENCES knowledge_nodes(id),
+    strategy        TEXT NOT NULL,           -- 'spatial' | 'symbolic' | 'narrative'
+    section_index   INTEGER,                 -- outline section index, NULL = goal-level
+    content         TEXT NOT NULL,            -- mnemonic description text
+    palace_location TEXT,                     -- spatial strategy only
+    effectiveness   REAL,                     -- 0.0-1.0, updated during review
+    created_at      TEXT NOT NULL,
+    UNIQUE(user_id, node_id, section_index)
+);
+
+-- Palace layouts (one per goal per user, spatial strategy only)
+CREATE TABLE IF NOT EXISTS palace_layouts (
+    id              TEXT PRIMARY KEY,
+    user_id         TEXT NOT NULL,
+    goal_id         TEXT NOT NULL REFERENCES learning_goals(id),
+    layout_desc     TEXT NOT NULL,            -- spatial layout description
+    location_map    TEXT,                     -- JSON: {node_id: location_name}
+    created_at      TEXT NOT NULL,
+    UNIQUE(user_id, goal_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_anchor_node   ON mnemonic_anchors(user_id, node_id);
+CREATE INDEX IF NOT EXISTS idx_palace_goal   ON palace_layouts(user_id, goal_id);
 """
 
 
@@ -864,3 +904,163 @@ def list_errors(
 def get_errors_for_node(node_id: str, user_id: str = "default") -> list[dict]:
     """Get error notebook entries for a specific node (used during Ebbinghaus review)."""
     return list_errors(user_id=user_id, node_id=node_id)
+
+
+# ── Cognitive Profile CRUD ────────────────────────────────────────────────────
+
+def create_cognitive_profile(
+    user_id: str,
+    spatial_weight: float = 0.33,
+    symbolic_weight: float = 0.33,
+    narrative_weight: float = 0.34,
+    assessed: bool = False,
+) -> dict:
+    profile = {
+        "user_id": user_id,
+        "spatial_weight": spatial_weight,
+        "symbolic_weight": symbolic_weight,
+        "narrative_weight": narrative_weight,
+        "assessed": 1 if assessed else 0,
+        "updated_at": _now(),
+    }
+    with get_connection() as conn:
+        conn.execute(
+            """INSERT INTO user_cognitive_profile
+               VALUES (:user_id,:spatial_weight,:symbolic_weight,:narrative_weight,:assessed,:updated_at)""",
+            profile,
+        )
+    profile["assessed"] = assessed
+    return profile
+
+
+def get_cognitive_profile(user_id: str) -> Optional[dict]:
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT * FROM user_cognitive_profile WHERE user_id = ?", (user_id,)
+        ).fetchone()
+    if not row:
+        return None
+    d = dict(row)
+    d["assessed"] = bool(d["assessed"])
+    return d
+
+
+def update_cognitive_profile(user_id: str, **fields):
+    if "assessed" in fields:
+        fields["assessed"] = 1 if fields["assessed"] else 0
+    fields["updated_at"] = _now()
+    sets = ", ".join(f"{k} = ?" for k in fields)
+    with get_connection() as conn:
+        conn.execute(
+            f"UPDATE user_cognitive_profile SET {sets} WHERE user_id = ?",
+            (*fields.values(), user_id),
+        )
+
+
+# ── Mnemonic Anchors CRUD ────────────────────────────────────────────────────
+
+def create_mnemonic_anchor(
+    user_id: str,
+    node_id: str,
+    strategy: str,
+    section_index: int | None,
+    content: str,
+    palace_location: str | None = None,
+) -> dict:
+    anchor = {
+        "id": _id(),
+        "user_id": user_id,
+        "node_id": node_id,
+        "strategy": strategy,
+        "section_index": section_index,
+        "content": content,
+        "palace_location": palace_location,
+        "effectiveness": None,
+        "created_at": _now(),
+    }
+    with get_connection() as conn:
+        conn.execute(
+            """INSERT INTO mnemonic_anchors
+               VALUES (:id,:user_id,:node_id,:strategy,:section_index,
+                       :content,:palace_location,:effectiveness,:created_at)""",
+            anchor,
+        )
+    return anchor
+
+
+def get_mnemonic_anchors(node_id: str, user_id: str = "default") -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT * FROM mnemonic_anchors WHERE node_id=? AND user_id=? ORDER BY section_index",
+            (node_id, user_id),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def update_mnemonic_anchor(anchor_id: str, **fields):
+    sets = ", ".join(f"{k} = ?" for k in fields)
+    with get_connection() as conn:
+        conn.execute(
+            f"UPDATE mnemonic_anchors SET {sets} WHERE id = ?",
+            (*fields.values(), anchor_id),
+        )
+
+
+def delete_mnemonic_anchors(node_id: str, user_id: str = "default") -> int:
+    """Delete all mnemonic anchors for a node. Returns count of deleted rows."""
+    with get_connection() as conn:
+        cursor = conn.execute(
+            "DELETE FROM mnemonic_anchors WHERE node_id=? AND user_id=?",
+            (node_id, user_id),
+        )
+    return cursor.rowcount
+
+
+# ── Palace Layouts CRUD ───────────────────────────────────────────────────────
+
+def create_palace_layout(
+    user_id: str,
+    goal_id: str,
+    layout_desc: str,
+    location_map: dict | None = None,
+) -> dict:
+    layout = {
+        "id": _id(),
+        "user_id": user_id,
+        "goal_id": goal_id,
+        "layout_desc": layout_desc,
+        "location_map": json.dumps(location_map or {}, ensure_ascii=False),
+        "created_at": _now(),
+    }
+    with get_connection() as conn:
+        conn.execute(
+            """INSERT INTO palace_layouts
+               VALUES (:id,:user_id,:goal_id,:layout_desc,:location_map,:created_at)""",
+            layout,
+        )
+    layout["location_map"] = location_map or {}
+    return layout
+
+
+def get_palace_layout(goal_id: str, user_id: str = "default") -> Optional[dict]:
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT * FROM palace_layouts WHERE goal_id=? AND user_id=?",
+            (goal_id, user_id),
+        ).fetchone()
+    if not row:
+        return None
+    d = dict(row)
+    d["location_map"] = json.loads(d["location_map"] or "{}")
+    return d
+
+
+def update_palace_layout(layout_id: str, **fields):
+    if "location_map" in fields and isinstance(fields["location_map"], dict):
+        fields["location_map"] = json.dumps(fields["location_map"], ensure_ascii=False)
+    sets = ", ".join(f"{k} = ?" for k in fields)
+    with get_connection() as conn:
+        conn.execute(
+            f"UPDATE palace_layouts SET {sets} WHERE id = ?",
+            (*fields.values(), layout_id),
+        )
