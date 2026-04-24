@@ -43,6 +43,7 @@ Outputs:
 from datetime import datetime, timezone
 from typing import Optional
 
+from src.agents.mnemonic import get_retrieval_context
 from src.db import database as db
 from src.graph import dag as dag_utils
 from src.logger import get_logger
@@ -190,6 +191,30 @@ def run_review_loop(
         console.print()
     else:
         console.print("[dim]此节点没有历史错题记录。[/dim]\n")
+
+    # ── 2b. Mnemonic retrieval practice (before exam) ───────────────────────────
+    retrieval_ctx = get_retrieval_context(node_id=node_id, user_id=user_id)
+    if retrieval_ctx:
+        strategy_names = {"spatial": "空间记忆", "symbolic": "逻辑规则", "narrative": "故事记忆"}
+        strategy_label = strategy_names.get(retrieval_ctx["strategy"], "助记")
+
+        console.print(Panel(
+            retrieval_ctx["prompt"],
+            title=f"🧠 助记回忆（{strategy_label}）",
+            border_style="magenta",
+        ))
+        console.print("[dim]请在脑中回忆，准备好后按 Enter 继续查看答案...[/dim]")
+        try:
+            input()
+        except (KeyboardInterrupt, EOFError):
+            pass
+
+        console.print(Panel(
+            retrieval_ctx["display"],
+            title="📋 助记锚点参考",
+            border_style="dim",
+        ))
+        console.print()
 
     console.print("[bold]即将开始复习考试。请做好准备。[/bold]")
     console.print()

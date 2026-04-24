@@ -187,3 +187,125 @@ def build_mnemonic_prompt_snippet(strategy: str) -> str:
     If the strategy is unknown, returns empty string (mnemonic layer disabled).
     """
     return _SNIPPETS.get(strategy, "")
+
+
+# ── Retrieval (Review Phase) ──────────────────────────────────────────────────
+
+def build_retrieval_prompt(anchors: list[dict], strategy: str) -> str:
+    """
+    Build a retrieval-practice prompt from stored mnemonic anchors.
+
+    This prompt is shown to the user before a review exam to activate
+    prior mnemonic encodings. It asks them to recall content by strategy.
+
+    Returns empty string if no anchors.
+    """
+    if not anchors:
+        return ""
+
+    if strategy == "spatial":
+        header = "🧠 请回忆你上次学习时构建的空间场景。你的记忆宫殿中有以下位置：\n"
+        items = []
+        for a in anchors:
+            loc = a.get("palace_location") or f"位置 {a.get('section_index', '?')}"
+            items.append(f"  📍 {loc} — 你在这里放了什么？请回忆那个场景...")
+        return header + "\n".join(items) + "\n\n请尝试在脑中走一遍这条路线，回忆每个位置的画面。"
+
+    elif strategy == "symbolic":
+        header = "🧠 请回忆你上次学习时整理的逻辑规则和分类结构：\n"
+        items = []
+        for a in anchors:
+            # Show a partial hint, not the full content
+            content = a.get("content", "")
+            hint = content[:15] + "..." if len(content) > 15 else content
+            items.append(f"  🔗 规则 {a.get('section_index', '?')}：{hint} — 完整的规则链是什么？")
+        return header + "\n".join(items) + "\n\n请尝试按顺序重建完整的逻辑链。"
+
+    elif strategy == "narrative":
+        header = "🧠 请回忆你上次学习时编的故事。以下是故事的线索：\n"
+        items = []
+        for a in anchors:
+            content = a.get("content", "")
+            hint = content[:20] + "..." if len(content) > 20 else content
+            items.append(f"  📖 片段 {a.get('section_index', '?')}：{hint} — 接下来发生了什么？")
+        return header + "\n".join(items) + "\n\n请尝试把完整的故事从头到尾讲一遍。"
+
+    return ""
+
+
+def format_retrieval_display(anchors: list[dict], strategy: str) -> str:
+    """
+    Format mnemonic anchors for CLI display during review.
+
+    Shows the full content of each anchor for the user to review
+    after they've attempted retrieval on their own.
+
+    Returns empty string if no anchors.
+    """
+    if not anchors:
+        return ""
+
+    lines = []
+    for a in anchors:
+        content = a.get("content", "")
+        if strategy == "spatial":
+            loc = a.get("palace_location") or "—"
+            lines.append(f"  📍 [{loc}] {content}")
+        elif strategy == "symbolic":
+            lines.append(f"  🔗 {content}")
+        elif strategy == "narrative":
+            lines.append(f"  📖 {content}")
+        else:
+            lines.append(f"  • {content}")
+
+    return "\n".join(lines)
+
+
+def get_retrieval_context(
+    node_id: str,
+    user_id: str = "default",
+) -> Optional[dict]:
+    """
+    Assemble the full mnemonic retrieval context for a node.
+
+    Returns None if:
+        - User has no cognitive profile (or not assessed)
+        - No mnemonic anchors exist for the node
+
+    Returns dict:
+        {
+            "strategy": str,
+            "anchors": list[dict],
+            "display": str,     # formatted anchor display
+            "prompt": str,      # retrieval practice prompt
+        }
+    """
+    from src.db import database as db
+
+    profile = db.get_cognitive_profile(user_id)
+    if not profile or not profile.get("assessed"):
+        return None
+
+    anchors = db.get_mnemonic_anchors(node_id=node_id, user_id=user_id)
+    if not anchors:
+        return None
+
+    weights = {
+        "spatial": profile["spatial_weight"],
+        "symbolic": profile["symbolic_weight"],
+        "narrative": profile["narrative_weight"],
+    }
+    strategy = get_dominant_strategy(weights)
+
+    display = format_retrieval_display(anchors, strategy)
+    prompt = build_retrieval_prompt(anchors, strategy)
+
+    if not display or not prompt:
+        return None
+
+    return {
+        "strategy": strategy,
+        "anchors": anchors,
+        "display": display,
+        "prompt": prompt,
+    }
