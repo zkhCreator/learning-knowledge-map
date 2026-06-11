@@ -16,6 +16,8 @@ __pycache__/
 htmlcov/
 build/
 dist/
+!skills/serve-learning-graph/web/dist/
+!skills/serve-learning-graph/web/dist/**
 .eggs/
 *.egg-info/
 
@@ -35,6 +37,7 @@ data/*.db
 data/*.db-*
 data/*.sqlite3
 data/*.sqlite3-*
+data/.web_url
 
 # Logs
 *.log

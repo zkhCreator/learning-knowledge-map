@@ -55,7 +55,7 @@ class TestOutlineWithMnemonic:
 
     @patch("src.agents.teacher.llm.call_json")
     def test_outline_includes_mnemonic_when_profile_exists(self, mock_call_json, make_node):
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.teacher import generate_outline
 
         node = make_node(title="WAL 日志与事务恢复")
@@ -89,7 +89,7 @@ class TestOutlineWithMnemonic:
 
     @patch("src.agents.teacher.llm.call_json")
     def test_outline_prompt_includes_mnemonic_instructions(self, mock_call_json, make_node):
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.teacher import generate_outline
 
         node = make_node(title="数据库事务")
@@ -154,7 +154,7 @@ class TestOutlineWithMnemonic:
 
     @patch("src.agents.teacher.llm.call_json")
     def test_mnemonic_anchors_persisted_to_db(self, mock_call_json, make_node):
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.teacher import generate_outline
 
         node = make_node(title="WAL 日志")
@@ -185,7 +185,7 @@ class TestSocraticWithMnemonic:
 
     @patch("src.agents.teacher.llm.call_json")
     def test_chat_turn_prompt_includes_mnemonic_context(self, mock_call_json, make_node):
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.teacher import chat_turn
 
         node = make_node(title="WAL 日志")

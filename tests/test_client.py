@@ -1,7 +1,7 @@
 """
 tests/test_client.py
 
-Unit tests for src/agents/client.py.
+Unit tests for src/infrastructure/llm.py.
 Covers pure-logic helpers (JSON extraction, URL normalisation).
 No real API calls are made in any test.
 """
@@ -13,7 +13,7 @@ import pytest
 
 class TestExtractJson:
     def _call(self, text):
-        from src.agents.client import _extract_json
+        from src.infrastructure.llm import _extract_json
         return _extract_json(text)
 
     def test_plain_json_object(self):
@@ -49,17 +49,17 @@ class TestExtractJson:
         assert result["approved"] is True
 
     def test_empty_string_raises(self):
-        from src.agents.client import _extract_json
+        from src.infrastructure.llm import _extract_json
         with pytest.raises(ValueError, match="empty"):
             _extract_json("")
 
     def test_whitespace_only_raises(self):
-        from src.agents.client import _extract_json
+        from src.infrastructure.llm import _extract_json
         with pytest.raises(ValueError):
             _extract_json("   ")
 
     def test_unparseable_raises_value_error(self):
-        from src.agents.client import _extract_json
+        from src.infrastructure.llm import _extract_json
         with pytest.raises(ValueError, match="Could not extract"):
             _extract_json("this is not json at all !!!")
 
@@ -78,7 +78,7 @@ class TestExtractJson:
 
 class TestFindBalancedJsonSubstring:
     def _call(self, text):
-        from src.agents.client import _find_balanced_json_substring
+        from src.infrastructure.llm import _find_balanced_json_substring
         return _find_balanced_json_substring(text)
 
     def test_simple_object(self):
@@ -104,7 +104,7 @@ class TestFindBalancedJsonSubstring:
 
 class TestParseJsonLike:
     def _call(self, text):
-        from src.agents.client import _parse_json_like
+        from src.infrastructure.llm import _parse_json_like
         return _parse_json_like(text)
 
     def test_valid_json(self):
@@ -131,7 +131,7 @@ class TestParseJsonLike:
 
 class TestNormaliseOpenAIBaseUrl:
     def _call(self, url):
-        from src.agents.client import _normalise_openai_base_url
+        from src.infrastructure.llm import _normalise_openai_base_url
         return _normalise_openai_base_url(url)
 
     def test_empty_string_returns_default(self):
@@ -162,7 +162,7 @@ class TestNormaliseOpenAIBaseUrl:
 
 class TestExtractOpenAIMessageText:
     def _call(self, message):
-        from src.agents.client import _extract_openai_message_text
+        from src.infrastructure.llm import _extract_openai_message_text
         return _extract_openai_message_text(message)
 
     def test_none_returns_empty(self):
@@ -187,3 +187,50 @@ class TestExtractOpenAIMessageText:
         class FakeMsg:
             content = None
         assert self._call(FakeMsg()) == ""
+
+
+# ── Web data-plane gate ────────────────────────────────────────────────────────
+
+class TestWebModeGate:
+    """In config.WEB_MODE the client refuses LLM work before touching any SDK,
+    so the GUI host can hand generation back to Codex / Claude Code."""
+
+    def test_call_refuses_in_web_mode(self, monkeypatch):
+        from src.infrastructure import llm as client
+        monkeypatch.setattr(client.config, "WEB_MODE", True)
+        with pytest.raises(client.AgentCapabilityUnavailable) as exc:
+            client.call("system", "user")
+        assert exc.value.code == "agent_required"
+
+    def test_call_json_refuses_in_web_mode(self, monkeypatch):
+        from src.infrastructure import llm as client
+        monkeypatch.setattr(client.config, "WEB_MODE", True)
+        with pytest.raises(client.AgentCapabilityUnavailable):
+            client.call_json("system", "user")
+
+    def test_call_proceeds_when_web_mode_off(self, monkeypatch):
+        from src.infrastructure import llm as client
+        monkeypatch.setattr(client.config, "WEB_MODE", False)
+        # Stub the provider client so no real SDK/network is touched.
+        sentinel = {"text": "ok"}
+
+        class _Resp:
+            class _Block:
+                text = "ok"
+            content = [_Block()]
+
+            class usage:  # noqa: N801 - mimic SDK attribute access
+                input_tokens = 1
+                output_tokens = 1
+            stop_reason = "end_turn"
+
+        class _FakeAnthropic:
+            class messages:  # noqa: N801
+                @staticmethod
+                def create(**kwargs):
+                    return _Resp()
+
+        monkeypatch.setattr(client, "get_client", lambda model=None: _FakeAnthropic())
+        monkeypatch.setattr(client.config, "DEFAULT_MODEL", "claude-test")
+        assert client.call("system", "user") == "ok"
+        assert sentinel["text"] == "ok"

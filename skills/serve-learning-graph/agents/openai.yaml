@@ -1,0 +1,4 @@
+interface:
+  display_name: "Serve Learning Graph"
+  short_description: "Open a SQLite learning graph as a React Flow page"
+  default_prompt: "Start the foreground Node server for the learning graph DB, resolve the goal by ID or prefix, handle occupied ports automatically, open the React Flow page, and do not modify the database."

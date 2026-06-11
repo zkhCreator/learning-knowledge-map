@@ -145,7 +145,7 @@ class TestScoreAnswer:
 class TestFinalizeExam:
     def _setup(self, tmp_db, make_node, score_override=None):
         """Create node, exam, and 3 answered question rows."""
-        from src.db import database as db
+        from src.data import database as db
         node = make_node(strictness_level="standard", mastery_threshold=0.80)
         exam = db.create_exam(node["id"])
         scored = []
@@ -168,7 +168,7 @@ class TestFinalizeExam:
         return node, exam, scored
 
     def test_pass_sets_state_mastered(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.examiner import _finalize_exam
         node, exam, scored = self._setup(tmp_db, make_node, score_override=0.9)
         summary = _finalize_exam(exam["id"], node, scored)
@@ -179,7 +179,7 @@ class TestFinalizeExam:
         assert state["raw_score"] == pytest.approx(0.9)
 
     def test_pass_creates_review_schedule(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.examiner import _finalize_exam
         node, exam, scored = self._setup(tmp_db, make_node, score_override=0.9)
         _finalize_exam(exam["id"], node, scored)
@@ -194,7 +194,7 @@ class TestFinalizeExam:
         assert row["review_round"] == 1
 
     def test_fail_sets_state_learning(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.examiner import _finalize_exam
         node, exam, scored = self._setup(tmp_db, make_node, score_override=0.4)
         summary = _finalize_exam(exam["id"], node, scored)
@@ -204,7 +204,7 @@ class TestFinalizeExam:
         assert state["status"] == "learning"
 
     def test_fail_does_not_create_review_schedule(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.examiner import _finalize_exam
         node, exam, scored = self._setup(tmp_db, make_node, score_override=0.4)
         _finalize_exam(exam["id"], node, scored)
@@ -216,7 +216,7 @@ class TestFinalizeExam:
         assert row is None
 
     def test_wrong_answers_written_to_error_notebook(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.examiner import _finalize_exam
         # 2 correct (0.9), 1 wrong (0.2)
         node = make_node()
@@ -241,7 +241,7 @@ class TestFinalizeExam:
         assert errors[0]["error_type"] == "boundary_unclear"
 
     def test_empty_scored_questions_returns_defaults(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.examiner import _finalize_exam
         node = make_node()
         exam = db.create_exam(node["id"])
@@ -250,7 +250,7 @@ class TestFinalizeExam:
         assert summary["passed"] is False
 
     def test_total_score_is_average(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.examiner import _finalize_exam
         node, exam, scored = self._setup(tmp_db, make_node, score_override=0.6)
         # Override scores: 1.0, 0.8, 0.6 → avg = 0.8
@@ -265,7 +265,7 @@ class TestFinalizeExam:
         assert summary["total_score"] == pytest.approx(0.8)
 
     def test_exam_marked_finished_in_db(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.examiner import _finalize_exam
         node, exam, scored = self._setup(tmp_db, make_node, score_override=0.85)
         _finalize_exam(exam["id"], node, scored)
@@ -278,7 +278,7 @@ class TestFinalizeExam:
         assert row["total_score"] == pytest.approx(0.85)
 
     def test_stability_updated_after_pass(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.examiner import _finalize_exam
         node, exam, scored = self._setup(tmp_db, make_node, score_override=0.9)
         _finalize_exam(exam["id"], node, scored)
@@ -288,7 +288,7 @@ class TestFinalizeExam:
         assert state["stability"] == pytest.approx(1.5)
 
     def test_stability_decreases_after_fail(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.examiner import _finalize_exam
         node, exam, scored = self._setup(tmp_db, make_node, score_override=0.3)
         _finalize_exam(exam["id"], node, scored)
@@ -298,7 +298,7 @@ class TestFinalizeExam:
         assert state["stability"] == pytest.approx(0.7)
 
     def test_critical_node_uses_higher_threshold(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.examiner import _finalize_exam
         # critical threshold = 0.95
         node = make_node(strictness_level="critical", mastery_threshold=0.95)

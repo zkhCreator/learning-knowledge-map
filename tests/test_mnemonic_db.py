@@ -17,7 +17,7 @@ import pytest
 
 class TestCognitiveProfile:
     def test_create_profile_defaults(self, tmp_db):
-        from src.db import database as db
+        from src.data import database as db
         profile = db.create_cognitive_profile(user_id="alice")
         assert profile["user_id"] == "alice"
         assert abs(profile["spatial_weight"] - 0.33) < 0.01
@@ -26,7 +26,7 @@ class TestCognitiveProfile:
         assert profile["assessed"] is False
 
     def test_create_profile_custom_weights(self, tmp_db):
-        from src.db import database as db
+        from src.data import database as db
         profile = db.create_cognitive_profile(
             user_id="bob",
             spatial_weight=0.6,
@@ -38,19 +38,19 @@ class TestCognitiveProfile:
         assert profile["assessed"] is True
 
     def test_get_profile_existing(self, tmp_db):
-        from src.db import database as db
+        from src.data import database as db
         db.create_cognitive_profile(user_id="alice")
         fetched = db.get_cognitive_profile("alice")
         assert fetched is not None
         assert fetched["user_id"] == "alice"
 
     def test_get_profile_missing_returns_none(self, tmp_db):
-        from src.db import database as db
+        from src.data import database as db
         result = db.get_cognitive_profile("nonexistent")
         assert result is None
 
     def test_update_profile_weights(self, tmp_db):
-        from src.db import database as db
+        from src.data import database as db
         db.create_cognitive_profile(user_id="alice")
         db.update_cognitive_profile(
             "alice",
@@ -64,7 +64,7 @@ class TestCognitiveProfile:
         assert fetched["assessed"] is True
 
     def test_get_dominant_strategy(self, tmp_db):
-        from src.db import database as db
+        from src.data import database as db
         db.create_cognitive_profile(
             user_id="alice",
             spatial_weight=0.6,
@@ -82,13 +82,13 @@ class TestCognitiveProfile:
         assert dominant == "spatial"
 
     def test_create_duplicate_profile_raises(self, tmp_db):
-        from src.db import database as db
+        from src.data import database as db
         db.create_cognitive_profile(user_id="alice")
         with pytest.raises(Exception):
             db.create_cognitive_profile(user_id="alice")
 
     def test_weights_boundary_zero(self, tmp_db):
-        from src.db import database as db
+        from src.data import database as db
         profile = db.create_cognitive_profile(
             user_id="zero",
             spatial_weight=0.0,
@@ -103,7 +103,7 @@ class TestCognitiveProfile:
 
 class TestMnemonicAnchors:
     def test_create_anchor(self, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         anchor = db.create_mnemonic_anchor(
             user_id="default",
@@ -119,7 +119,7 @@ class TestMnemonicAnchors:
         assert anchor["effectiveness"] is None
 
     def test_create_anchor_symbolic(self, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         anchor = db.create_mnemonic_anchor(
             user_id="default",
@@ -132,7 +132,7 @@ class TestMnemonicAnchors:
         assert anchor["palace_location"] is None
 
     def test_create_anchor_narrative(self, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         anchor = db.create_mnemonic_anchor(
             user_id="default",
@@ -144,7 +144,7 @@ class TestMnemonicAnchors:
         assert anchor["strategy"] == "narrative"
 
     def test_create_anchor_goal_level_null_section(self, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         anchor = db.create_mnemonic_anchor(
             user_id="default",
@@ -157,7 +157,7 @@ class TestMnemonicAnchors:
         assert anchor["section_index"] is None
 
     def test_get_anchors_for_node(self, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         db.create_mnemonic_anchor(
             user_id="default", node_id=node["id"],
@@ -171,13 +171,13 @@ class TestMnemonicAnchors:
         assert len(anchors) == 2
 
     def test_get_anchors_empty(self, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         anchors = db.get_mnemonic_anchors(node_id=node["id"], user_id="default")
         assert anchors == []
 
     def test_update_anchor_effectiveness(self, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         anchor = db.create_mnemonic_anchor(
             user_id="default", node_id=node["id"],
@@ -188,7 +188,7 @@ class TestMnemonicAnchors:
         assert abs(anchors[0]["effectiveness"] - 0.85) < 0.01
 
     def test_duplicate_anchor_same_section_raises(self, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         db.create_mnemonic_anchor(
             user_id="default", node_id=node["id"],
@@ -201,7 +201,7 @@ class TestMnemonicAnchors:
             )
 
     def test_delete_anchors_for_node(self, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         db.create_mnemonic_anchor(
             user_id="default", node_id=node["id"],
@@ -220,7 +220,7 @@ class TestMnemonicAnchors:
 
 class TestPalaceLayouts:
     def test_create_palace_layout(self, make_goal):
-        from src.db import database as db
+        from src.data import database as db
         goal = make_goal()
         layout = db.create_palace_layout(
             user_id="default",
@@ -233,7 +233,7 @@ class TestPalaceLayouts:
         assert layout["location_map"]["node_1"] == "一楼大厅"
 
     def test_get_palace_layout(self, make_goal):
-        from src.db import database as db
+        from src.data import database as db
         goal = make_goal()
         db.create_palace_layout(
             user_id="default", goal_id=goal["id"],
@@ -244,12 +244,12 @@ class TestPalaceLayouts:
         assert fetched["layout_desc"] == "测试宫殿"
 
     def test_get_palace_layout_missing(self, make_goal):
-        from src.db import database as db
+        from src.data import database as db
         result = db.get_palace_layout(goal_id="nonexistent", user_id="default")
         assert result is None
 
     def test_update_palace_layout(self, make_goal):
-        from src.db import database as db
+        from src.data import database as db
         goal = make_goal()
         layout = db.create_palace_layout(
             user_id="default", goal_id=goal["id"],
@@ -265,7 +265,7 @@ class TestPalaceLayouts:
         assert "b" in fetched["location_map"]
 
     def test_duplicate_palace_for_same_goal_raises(self, make_goal):
-        from src.db import database as db
+        from src.data import database as db
         goal = make_goal()
         db.create_palace_layout(
             user_id="default", goal_id=goal["id"],

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Exam Start"
+  short_description: "Run a post-learning exam for a knowledge node"
+  default_prompt: "Run a per-node exam in the workflow host: load or generate the node outline, generate questions, take the user's answers one at a time and score each, then finalize the attempt — update mastery state, write the error notebook, and schedule the next Ebbinghaus review on pass. Never leak the expected answer to the client."

@@ -45,7 +45,7 @@ class TestGenerateOutline:
     def test_normal_flow_creates_validated_outline(self, mock_call, tmp_db, make_node):
         mock_call.side_effect = [OUTLINE_RESPONSE, APPROVED_REVIEW]
         from src.agents.teacher import generate_outline
-        from src.db import database as db
+        from src.data import database as db
 
         node = make_node()
         outline = generate_outline(node["id"])
@@ -155,7 +155,7 @@ class TestGenerateOutline:
 
 class TestChatTurn:
     def _make_session(self, tmp_db, make_node, make_outline):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         outline = make_outline(node_id=node["id"])
         db.update_outline(outline["id"], status="active")
@@ -223,7 +223,7 @@ class TestChatTurn:
     def test_no_duplicate_sections_in_covered(self, mock_call, tmp_db, make_node, make_outline):
         """Section already in covered_sections is not duplicated."""
         node, outline, session = self._make_session(tmp_db, make_node, make_outline)
-        from src.db import database as db
+        from src.data import database as db
         # Pre-set session as already covering section 1
         db.update_session(session["id"], covered_sections=[1], progress=0.5)
         session["covered_sections"] = [1]
@@ -248,7 +248,7 @@ class TestChatTurn:
         mock_call.return_value = {"response": "My response", "newly_covered_sections": []}
         node, outline, session = self._make_session(tmp_db, make_node, make_outline)
         from src.agents.teacher import chat_turn
-        from src.db import database as db
+        from src.data import database as db
 
         chat_turn(session, node, outline["sections"], "User input", [])
         history = db.get_chat_history(session["id"])
@@ -271,7 +271,7 @@ class TestStartOrResumeSession:
         assert session["progress"] == 0.0
 
     def test_resumes_existing_active_session(self, tmp_db, make_node, make_outline):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         outline = make_outline(node_id=node["id"])
         first = db.create_learning_session(node["id"], outline["id"])

@@ -48,13 +48,15 @@ DEFAULT_MODEL=claude-sonnet-4-6
 
 ## 命令总览
 
+> **CLI 是纯数据平面（doc 19）**：只做初始化、查看、删除/导出，**永不调用大模型**。
+> 所有「生成类」能力（拆解 / 评估 / 学习 / 出题 / 复习）都交给 Claude Code / Codex 里的 skill，
+> 详见下方「生成类能力 → skill」。
+
 ```bash
 python main.py --help
 python main.py init
 python main.py init --help
 python main.py goal --help
-python main.py goal new "学会 Kubernetes 集群管理" --domains "Linux,Docker"
-python main.py goal new --help
 python main.py goal list
 python main.py goal list --help
 python main.py goal remove <goal-id>
@@ -65,9 +67,26 @@ python main.py goal tree <goal-id>
 python main.py goal tree --help
 python main.py goal nodes <goal-id>
 python main.py goal nodes --help
+python main.py learn progress <node-id>
+python main.py exam review <exam-id>
+python main.py errors list
+python main.py review list
 python main.py status
 python main.py status --help
 ```
+
+### 生成类能力 → skill
+
+在 Claude Code / Codex 中运行（不再是 CLI 命令）：
+
+| 能力 | Skill |
+| ---- | ----- |
+| 拆解学习目标为知识图谱 | `/decompose-learning-goal` |
+| 学习前初始评估 | `/goal-assess` |
+| 单节点苏格拉底学习 | `/learn-start` |
+| 节点考试（出题 / 评分） | `/exam-start` |
+| 错题重做 / 间隔复习 | `/review-start` |
+| 复习队列浏览 | `/review-list` |
 
 ## Help 快速查看
 
@@ -75,7 +94,6 @@ python main.py status --help
 python main.py --help
 python main.py init --help
 python main.py goal --help
-python main.py goal new --help
 python main.py goal list --help
 python main.py goal remove --help
 python main.py goal export --help
@@ -102,24 +120,15 @@ python main.py init [--verbose]
 说明：
 - 会先校验当前模型对应的 API key，再初始化数据库。
 
-### 2. 创建学习目标并拆解
+### 2. 创建学习目标并拆解（走 skill）
 
-```bash
-python main.py goal new "<title>" [--domains "<d1,d2,...>"] [--user "<user_id>"] [--verbose]
+拆解会调用大模型，已从 CLI 移到 skill。在 Claude Code / Codex 中运行：
+
+```
+/decompose-learning-goal 学会 Kubernetes 集群管理
 ```
 
-参数：
-- `title`：必填，学习目标
-- `--domains`, `-d`：可选，用户已知领域，逗号分隔
-- `--user`, `-u`：可选，用户 ID，默认 `default`
-- `--verbose`, `-v`：可选，同时打印 DEBUG 日志
-
-示例：
-
-```bash
-python main.py goal new "学会 Kubernetes 集群管理" --domains "Linux,Docker"
-python main.py goal new "理解 Transformer" -d "Python,线性代数" -u alice -v
-```
+拆解完成后用下面的数据命令查看结果（`goal tree` / `goal nodes`）。
 
 ### 3. 列出学习目标
 
@@ -207,10 +216,10 @@ python main.py status [--user "<user_id>"] [--verbose]
 python main.py init
 ```
 
-### 创建目标并拆解
+### 创建目标并拆解（走 skill）
 
-```bash
-python main.py goal new "学会 Kubernetes 集群管理" --domains "Linux,Docker"
+```
+/decompose-learning-goal 学会 Kubernetes 集群管理
 ```
 
 ### 查看目标图谱

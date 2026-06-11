@@ -1,0 +1,2025 @@
+{
+  "target": "从 0 到 10w DAU 的 SEO 学习路径",
+  "assumptions": [
+    "学习者从 SEO 零基础开始，但能参与内容、产品、数据分析或网站运营工作。",
+    "10w DAU 被视为需要 SEO 支撑的增长量级目标，不承诺 SEO 单独带来 10w DAU。",
+    "学习路径以 Google Search 官方规则和工具为主，默认是单语言网站；国际化 hreflang 暂不作为主线。",
+    "每个原子节点控制在约 15 分钟学习量，并通过 3 个判别性 QA 检查掌握。",
+    "生成式 AI 搜索部分仅覆盖 Google 官方建议和可迁移原则，不把第三方 GEO/AEO 主张当成排名事实。"
+  ],
+  "sources": [
+    {
+      "title": "Google Search Central: SEO Starter Guide",
+      "url": "https://developers.google.com/search/docs/fundamentals/seo-starter-guide",
+      "used_for": "SEO 基础、站点组织、标题、链接、内容和搜索呈现的主线依据。"
+    },
+    {
+      "title": "Google Search Central: Search Essentials",
+      "url": "https://developers.google.com/search/docs/essentials",
+      "used_for": "技术要求、spam policies 和最佳实践三层边界。"
+    },
+    {
+      "title": "Google Search Central: Creating Helpful, Reliable, People-First Content",
+      "url": "https://developers.google.com/search/docs/fundamentals/creating-helpful-content",
+      "used_for": "内容质量、一手经验、可信度和非商品化内容原则。"
+    },
+    {
+      "title": "Google Search Central: URL Structure Best Practices",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/url-structure",
+      "used_for": "URL 模式、目录结构和可理解站点结构。"
+    },
+    {
+      "title": "Google Search Central: Make Your Links Crawlable",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/links-crawlable",
+      "used_for": "内部链接和 a href 可抓取性要求。"
+    },
+    {
+      "title": "Google Search Central: Build and Submit a Sitemap",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap",
+      "used_for": "XML sitemap、lastmod 与 Search Console 提交。"
+    },
+    {
+      "title": "Google Search Central: Introduction to robots.txt",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/robots/intro",
+      "used_for": "robots.txt 的适用边界与误用风险。"
+    },
+    {
+      "title": "Google Search Central: How to Specify a Canonical URL",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls",
+      "used_for": "重复 URL 规范化、canonical 选择与内部链接一致性。"
+    },
+    {
+      "title": "Google Search Central: Introduction to Structured Data Markup",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data",
+      "used_for": "结构化数据适用场景与验证要求。"
+    },
+    {
+      "title": "Google Search Central: JavaScript SEO Basics",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics",
+      "used_for": "JS 渲染、History API URL、可索引内容和链接发现。"
+    },
+    {
+      "title": "Google Search Central: Get Started with Search Console",
+      "url": "https://developers.google.com/search/docs/monitor-debug/search-console-start",
+      "used_for": "Search Console 属性、URL Inspection 和 sitemap 检查。"
+    },
+    {
+      "title": "Google Search Central: Debug Search Traffic Drops",
+      "url": "https://developers.google.com/search/docs/monitor-debug/debugging-search-traffic-drops",
+      "used_for": "流量下跌按查询、页面、国家、设备和搜索外观分解。"
+    },
+    {
+      "title": "web.dev: Core Web Vitals",
+      "url": "https://web.dev/articles/vitals",
+      "used_for": "LCP、INP、CLS 和 75 分位体验指标。"
+    },
+    {
+      "title": "Google Search Central: Spam Policies for Google Web Search",
+      "url": "https://developers.google.com/search/docs/essentials/spam-policies",
+      "used_for": "关键词堆砌、链接操纵、scaled content abuse、site reputation abuse 等风险。"
+    },
+    {
+      "title": "Google Search Central: AI Features and Your Website",
+      "url": "https://developers.google.com/search/docs/appearance/ai-features",
+      "used_for": "AI Overviews/AI Mode 与 Search 索引、质量系统和预览控制的关系。"
+    },
+    {
+      "title": "Google Search Central: Generative AI Search Optimization Guide",
+      "url": "https://developers.google.com/search/docs/fundamentals/ai-optimization-guide",
+      "used_for": "AI 搜索适配、query fan-out、非商品化内容和第三方主张辨析。"
+    }
+  ],
+  "nodes": [
+    {
+      "title": "从 0 到 10w DAU 的 SEO 学习路径",
+      "description": "把从零开始学习 SEO 到支撑 10w DAU 量级自然搜索增长所需的知识拆成 DAG。",
+      "domain": "seo-growth",
+      "concept_fingerprint": [
+        "organic-acquisition",
+        "learning-dag",
+        "growth-system"
+      ],
+      "difficulty": 5,
+      "est_minutes": 720,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "根节点只表达学习目标，不直接承诺流量结果。",
+      "is_atomic": false,
+      "parent_title": null,
+      "qa_draft": []
+    },
+    {
+      "title": "SEO 目标与搜索系统基础",
+      "description": "建立 SEO 与 DAU 的边界，理解搜索系统如何发现、索引和展示页面。",
+      "domain": "seo-foundations",
+      "concept_fingerprint": [
+        "search-system",
+        "growth-funnel",
+        "eligibility"
+      ],
+      "difficulty": 4,
+      "est_minutes": 90,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "分组节点用于组织学习路径，不作为 prerequisite edge 端点。",
+      "is_atomic": false,
+      "parent_title": "从 0 到 10w DAU 的 SEO 学习路径",
+      "qa_draft": []
+    },
+    {
+      "title": "需求、关键词与内容机会",
+      "description": "把用户任务、搜索意图和内容机会转成可执行的页面规划。",
+      "domain": "content-strategy",
+      "concept_fingerprint": [
+        "intent",
+        "topic-map",
+        "opportunity-scoring"
+      ],
+      "difficulty": 4,
+      "est_minutes": 90,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "分组节点用于组织学习路径，不作为 prerequisite edge 端点。",
+      "is_atomic": false,
+      "parent_title": "从 0 到 10w DAU 的 SEO 学习路径",
+      "qa_draft": []
+    },
+    {
+      "title": "站点信息架构与可抓取性",
+      "description": "让搜索引擎和用户都能理解站点结构、链接路径和规模化抓取风险。",
+      "domain": "technical-seo",
+      "concept_fingerprint": [
+        "site-architecture",
+        "crawlability",
+        "scale-risk"
+      ],
+      "difficulty": 4,
+      "est_minutes": 90,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "分组节点用于组织学习路径，不作为 prerequisite edge 端点。",
+      "is_atomic": false,
+      "parent_title": "从 0 到 10w DAU 的 SEO 学习路径",
+      "qa_draft": []
+    },
+    {
+      "title": "索引、规范化与技术控制",
+      "description": "掌握索引控制、重复 URL 处理和常见索引异常的初步诊断。",
+      "domain": "indexing",
+      "concept_fingerprint": [
+        "index-control",
+        "canonicalization",
+        "diagnostics"
+      ],
+      "difficulty": 4,
+      "est_minutes": 90,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "分组节点用于组织学习路径，不作为 prerequisite edge 端点。",
+      "is_atomic": false,
+      "parent_title": "从 0 到 10w DAU 的 SEO 学习路径",
+      "qa_draft": []
+    },
+    {
+      "title": "页面内容与搜索呈现",
+      "description": "让单页内容、标题、多媒体和结构化数据清楚服务搜索意图。",
+      "domain": "on-page-seo",
+      "concept_fingerprint": [
+        "content-clarity",
+        "search-appearance",
+        "structured-data"
+      ],
+      "difficulty": 4,
+      "est_minutes": 90,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "分组节点用于组织学习路径，不作为 prerequisite edge 端点。",
+      "is_atomic": false,
+      "parent_title": "从 0 到 10w DAU 的 SEO 学习路径",
+      "qa_draft": []
+    },
+    {
+      "title": "页面体验与前端 SEO",
+      "description": "理解移动优先、核心体验指标和 JavaScript 渲染对搜索可见性的影响。",
+      "domain": "frontend-seo",
+      "concept_fingerprint": [
+        "mobile-first",
+        "web-vitals",
+        "rendering"
+      ],
+      "difficulty": 4,
+      "est_minutes": 90,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "分组节点用于组织学习路径，不作为 prerequisite edge 端点。",
+      "is_atomic": false,
+      "parent_title": "从 0 到 10w DAU 的 SEO 学习路径",
+      "qa_draft": []
+    },
+    {
+      "title": "权威、分发与合规增长",
+      "description": "建立可信内容与合规分发机制，避免高风险 spam 策略。",
+      "domain": "authority-policy",
+      "concept_fingerprint": [
+        "trust-signals",
+        "link-earning",
+        "spam-risk"
+      ],
+      "difficulty": 4,
+      "est_minutes": 90,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "分组节点用于组织学习路径，不作为 prerequisite edge 端点。",
+      "is_atomic": false,
+      "parent_title": "从 0 到 10w DAU 的 SEO 学习路径",
+      "qa_draft": []
+    },
+    {
+      "title": "数据分析、实验与扩张运营",
+      "description": "用 Search Console 和实验方法把 SEO 从单次优化变成持续运营系统。",
+      "domain": "seo-analytics",
+      "concept_fingerprint": [
+        "measurement",
+        "experimentation",
+        "diagnostics"
+      ],
+      "difficulty": 4,
+      "est_minutes": 90,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "分组节点用于组织学习路径，不作为 prerequisite edge 端点。",
+      "is_atomic": false,
+      "parent_title": "从 0 到 10w DAU 的 SEO 学习路径",
+      "qa_draft": []
+    },
+    {
+      "title": "生成式 AI 搜索与未来适配",
+      "description": "理解 Google AI 搜索仍依赖索引和质量系统，并避免把第三方猜测当事实。",
+      "domain": "ai-search",
+      "concept_fingerprint": [
+        "ai-overviews",
+        "query-fanout",
+        "agent-readiness"
+      ],
+      "difficulty": 4,
+      "est_minutes": 90,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "分组节点用于组织学习路径，不作为 prerequisite edge 端点。",
+      "is_atomic": false,
+      "parent_title": "从 0 到 10w DAU 的 SEO 学习路径",
+      "qa_draft": []
+    },
+    {
+      "title": "区分 SEO 流量目标与 DAU 业务目标",
+      "description": "把自然搜索访问、激活和留存分开，避免把 DAU 归因全部压给 SEO。",
+      "domain": "seo-foundations",
+      "concept_fingerprint": [
+        "metric-boundary",
+        "activation",
+        "retention"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "混淆 DAU 与搜索会导致错误目标和错误复盘。",
+      "is_atomic": true,
+      "parent_title": "SEO 目标与搜索系统基础",
+      "qa_draft": [
+        "用一句话说明「区分 SEO 流量目标与 DAU 业务目标」解决的 SEO 决策问题。",
+        "给出一个误用「区分 SEO 流量目标与 DAU 业务目标」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「区分 SEO 流量目标与 DAU 业务目标」的检查动作。"
+      ]
+    },
+    {
+      "title": "解释 Google 的发现、抓取、索引、排名流程",
+      "description": "说明 URL 从被发现到被抓取、索引、排序和展示的基本路径。",
+      "domain": "seo-foundations",
+      "concept_fingerprint": [
+        "crawl",
+        "index",
+        "ranking"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "critical",
+      "mastery_threshold": 0.95,
+      "risk_note": "不懂流程会把排名问题误判为内容或技术问题。",
+      "is_atomic": true,
+      "parent_title": "SEO 目标与搜索系统基础",
+      "qa_draft": [
+        "用一句话说明「解释 Google 的发现、抓取、索引、排名流程」解决的 SEO 决策问题。",
+        "给出一个误用「解释 Google 的发现、抓取、索引、排名流程」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「解释 Google 的发现、抓取、索引、排名流程」的检查动作。"
+      ]
+    },
+    {
+      "title": "识别 Search Essentials 的技术、政策、最佳实践三层",
+      "description": "区分能否进入搜索、是否违规以及怎样更容易被理解。",
+      "domain": "seo-foundations",
+      "concept_fingerprint": [
+        "eligibility",
+        "policy",
+        "best-practice"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "critical",
+      "mastery_threshold": 0.95,
+      "risk_note": "把政策风险当优化技巧会带来索引或排名损失。",
+      "is_atomic": true,
+      "parent_title": "SEO 目标与搜索系统基础",
+      "qa_draft": [
+        "用一句话说明「识别 Search Essentials 的技术、政策、最佳实践三层」解决的 SEO 决策问题。",
+        "给出一个误用「识别 Search Essentials 的技术、政策、最佳实践三层」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「识别 Search Essentials 的技术、政策、最佳实践三层」的检查动作。"
+      ]
+    },
+    {
+      "title": "使用 site: 快速检查公开收录",
+      "description": "用 site: 查询做粗略公开收录观察，并理解它不能替代 Search Console。",
+      "domain": "seo-foundations",
+      "concept_fingerprint": [
+        "index-sampling",
+        "operator",
+        "baseline"
+      ],
+      "difficulty": 1,
+      "est_minutes": 15,
+      "strictness_level": "familiarity",
+      "mastery_threshold": 0.6,
+      "risk_note": "过度依赖 site: 会误判真实索引状态。",
+      "is_atomic": true,
+      "parent_title": "SEO 目标与搜索系统基础",
+      "qa_draft": [
+        "用一句话说明「使用 site: 快速检查公开收录」解决的 SEO 决策问题。",
+        "给出一个误用「使用 site: 快速检查公开收录」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「使用 site: 快速检查公开收录」的检查动作。"
+      ]
+    },
+    {
+      "title": "拆解 SEO 增长漏斗：曝光、CTR、访问、激活、留存",
+      "description": "把 SEO 增长拆成可测量环节，定位瓶颈在搜索还是产品。",
+      "domain": "seo-foundations",
+      "concept_fingerprint": [
+        "funnel",
+        "ctr",
+        "activation"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "只看访问量会掩盖搜索呈现或产品留存问题。",
+      "is_atomic": true,
+      "parent_title": "SEO 目标与搜索系统基础",
+      "qa_draft": [
+        "用一句话说明「拆解 SEO 增长漏斗：曝光、CTR、访问、激活、留存」解决的 SEO 决策问题。",
+        "给出一个误用「拆解 SEO 增长漏斗：曝光、CTR、访问、激活、留存」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「拆解 SEO 增长漏斗：曝光、CTR、访问、激活、留存」的检查动作。"
+      ]
+    },
+    {
+      "title": "定义受众任务与搜索意图",
+      "description": "描述目标用户要完成的任务、问题和成功标准。",
+      "domain": "content-strategy",
+      "concept_fingerprint": [
+        "audience-task",
+        "intent",
+        "jobs-to-be-done"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "critical",
+      "mastery_threshold": 0.95,
+      "risk_note": "没有意图定义会产生堆关键词式低价值页面。",
+      "is_atomic": true,
+      "parent_title": "需求、关键词与内容机会",
+      "qa_draft": [
+        "用一句话说明「定义受众任务与搜索意图」解决的 SEO 决策问题。",
+        "给出一个误用「定义受众任务与搜索意图」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「定义受众任务与搜索意图」的检查动作。"
+      ]
+    },
+    {
+      "title": "将搜索意图映射为页面类型和内容格式",
+      "description": "把意图转成指南、对比、工具、列表页或产品页等页面形态。",
+      "domain": "content-strategy",
+      "concept_fingerprint": [
+        "intent-to-format",
+        "page-type",
+        "content-design"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "页面类型错位会导致内容再完整也不满足查询。",
+      "is_atomic": true,
+      "parent_title": "需求、关键词与内容机会",
+      "qa_draft": [
+        "用一句话说明「将搜索意图映射为页面类型和内容格式」解决的 SEO 决策问题。",
+        "给出一个误用「将搜索意图映射为页面类型和内容格式」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「将搜索意图映射为页面类型和内容格式」的检查动作。"
+      ]
+    },
+    {
+      "title": "建立轻量主题地图",
+      "description": "把核心主题、子问题和页面候选组织成可扩展地图。",
+      "domain": "content-strategy",
+      "concept_fingerprint": [
+        "topic-map",
+        "clustering",
+        "coverage"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "只做孤立关键词会造成重复页面和内部竞争。",
+      "is_atomic": true,
+      "parent_title": "需求、关键词与内容机会",
+      "qa_draft": [
+        "用一句话说明「建立轻量主题地图」解决的 SEO 决策问题。",
+        "给出一个误用「建立轻量主题地图」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「建立轻量主题地图」的检查动作。"
+      ]
+    },
+    {
+      "title": "用 SERP 观察区分信息型、商业型、导航型查询",
+      "description": "通过搜索结果页面的类型和特征判断查询背后的意图类别。",
+      "domain": "content-strategy",
+      "concept_fingerprint": [
+        "serp-reading",
+        "intent-class",
+        "market-signal"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "误读 SERP 会让内容格式和转化路径偏离需求。",
+      "is_atomic": true,
+      "parent_title": "需求、关键词与内容机会",
+      "qa_draft": [
+        "用一句话说明「用 SERP 观察区分信息型、商业型、导航型查询」解决的 SEO 决策问题。",
+        "给出一个误用「用 SERP 观察区分信息型、商业型、导航型查询」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「用 SERP 观察区分信息型、商业型、导航型查询」的检查动作。"
+      ]
+    },
+    {
+      "title": "用四象限评分判断关键词机会",
+      "description": "用需求、难度、业务价值和内容缺口做轻量优先级判断。",
+      "domain": "content-strategy",
+      "concept_fingerprint": [
+        "opportunity-score",
+        "prioritization",
+        "tradeoff"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "只看搜索量会错过可转化或低竞争机会。",
+      "is_atomic": true,
+      "parent_title": "需求、关键词与内容机会",
+      "qa_draft": [
+        "用一句话说明「用四象限评分判断关键词机会」解决的 SEO 决策问题。",
+        "给出一个误用「用四象限评分判断关键词机会」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「用四象限评分判断关键词机会」的检查动作。"
+      ]
+    },
+    {
+      "title": "识别内容缺口与非商品化角度",
+      "description": "找出当前结果缺少的经验、数据、工具或清晰解释。",
+      "domain": "content-strategy",
+      "concept_fingerprint": [
+        "content-gap",
+        "differentiation",
+        "non-commodity"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "复制已有答案难以形成长期搜索优势。",
+      "is_atomic": true,
+      "parent_title": "需求、关键词与内容机会",
+      "qa_draft": [
+        "用一句话说明「识别内容缺口与非商品化角度」解决的 SEO 决策问题。",
+        "给出一个误用「识别内容缺口与非商品化角度」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「识别内容缺口与非商品化角度」的检查动作。"
+      ]
+    },
+    {
+      "title": "规划一手经验证据",
+      "description": "为页面设计截图、数据、案例、实验或真实流程证据。",
+      "domain": "content-strategy",
+      "concept_fingerprint": [
+        "first-hand",
+        "evidence",
+        "credibility"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "缺少证据会让内容像泛化改写，难以建立信任。",
+      "is_atomic": true,
+      "parent_title": "需求、关键词与内容机会",
+      "qa_draft": [
+        "用一句话说明「规划一手经验证据」解决的 SEO 决策问题。",
+        "给出一个误用「规划一手经验证据」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「规划一手经验证据」的检查动作。"
+      ]
+    },
+    {
+      "title": "设计清晰目录与 URL 模式",
+      "description": "设计短、稳定、可理解的目录和 URL 命名规则。",
+      "domain": "technical-seo",
+      "concept_fingerprint": [
+        "url-pattern",
+        "information-scent",
+        "stability"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "混乱 URL 会增加重复、迁移和抓取理解成本。",
+      "is_atomic": true,
+      "parent_title": "站点信息架构与可抓取性",
+      "qa_draft": [
+        "用一句话说明「设计清晰目录与 URL 模式」解决的 SEO 决策问题。",
+        "给出一个误用「设计清晰目录与 URL 模式」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「设计清晰目录与 URL 模式」的检查动作。"
+      ]
+    },
+    {
+      "title": "保证内部链接使用可抓取 a href",
+      "description": "确保重要页面通过标准链接被发现，而不是只靠脚本事件。",
+      "domain": "technical-seo",
+      "concept_fingerprint": [
+        "crawlable-link",
+        "discovery",
+        "html-anchor"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "critical",
+      "mastery_threshold": 0.95,
+      "risk_note": "不可抓取链接会让重要页面无法可靠进入发现路径。",
+      "is_atomic": true,
+      "parent_title": "站点信息架构与可抓取性",
+      "qa_draft": [
+        "用一句话说明「保证内部链接使用可抓取 a href」解决的 SEO 决策问题。",
+        "给出一个误用「保证内部链接使用可抓取 a href」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「保证内部链接使用可抓取 a href」的检查动作。"
+      ]
+    },
+    {
+      "title": "构建主题集群与枢纽页链接路径",
+      "description": "把核心页、子页和相关页连接成可导航的主题集群。",
+      "domain": "technical-seo",
+      "concept_fingerprint": [
+        "hub-page",
+        "internal-linking",
+        "topical-cluster"
+      ],
+      "difficulty": 3,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "没有链接路径会让页面权重和主题关系分散。",
+      "is_atomic": true,
+      "parent_title": "站点信息架构与可抓取性",
+      "qa_draft": [
+        "用一句话说明「构建主题集群与枢纽页链接路径」解决的 SEO 决策问题。",
+        "给出一个误用「构建主题集群与枢纽页链接路径」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「构建主题集群与枢纽页链接路径」的检查动作。"
+      ]
+    },
+    {
+      "title": "识别孤岛页、分页和筛选页风险",
+      "description": "识别没有入口、分页断裂、参数筛选造成的抓取和重复风险。",
+      "domain": "technical-seo",
+      "concept_fingerprint": [
+        "orphan-page",
+        "pagination",
+        "faceted-navigation"
+      ],
+      "difficulty": 3,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "规模化页面容易被参数和孤岛页消耗抓取资源。",
+      "is_atomic": true,
+      "parent_title": "站点信息架构与可抓取性",
+      "qa_draft": [
+        "用一句话说明「识别孤岛页、分页和筛选页风险」解决的 SEO 决策问题。",
+        "给出一个误用「识别孤岛页、分页和筛选页风险」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「识别孤岛页、分页和筛选页风险」的检查动作。"
+      ]
+    },
+    {
+      "title": "生成并维护 XML sitemap 与 lastmod",
+      "description": "为重要 URL 生成 sitemap，并只在真实重要更新时维护 lastmod。",
+      "domain": "technical-seo",
+      "concept_fingerprint": [
+        "sitemap",
+        "lastmod",
+        "discovery-signal"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "错误 lastmod 或垃圾 URL 会降低 sitemap 信号质量。",
+      "is_atomic": true,
+      "parent_title": "站点信息架构与可抓取性",
+      "qa_draft": [
+        "用一句话说明「生成并维护 XML sitemap 与 lastmod」解决的 SEO 决策问题。",
+        "给出一个误用「生成并维护 XML sitemap 与 lastmod」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「生成并维护 XML sitemap 与 lastmod」的检查动作。"
+      ]
+    },
+    {
+      "title": "判断大型站点 crawl budget 风险",
+      "description": "识别低价值 URL、重复参数、服务器错误和更新频率对抓取预算的影响。",
+      "domain": "technical-seo",
+      "concept_fingerprint": [
+        "crawl-budget",
+        "large-site",
+        "url-waste"
+      ],
+      "difficulty": 3,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "高规模站点若浪费抓取，会拖慢重要页面发现和更新。",
+      "is_atomic": true,
+      "parent_title": "站点信息架构与可抓取性",
+      "qa_draft": [
+        "用一句话说明「判断大型站点 crawl budget 风险」解决的 SEO 决策问题。",
+        "给出一个误用「判断大型站点 crawl budget 风险」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「判断大型站点 crawl budget 风险」的检查动作。"
+      ]
+    },
+    {
+      "title": "判断 robots.txt 适用边界",
+      "description": "说明 robots.txt 适合控制抓取，不等同于安全、删除或 noindex。",
+      "domain": "indexing",
+      "concept_fingerprint": [
+        "robots",
+        "crawl-control",
+        "boundary"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "critical",
+      "mastery_threshold": 0.95,
+      "risk_note": "用 robots.txt 隐藏敏感或移除索引是高风险误用。",
+      "is_atomic": true,
+      "parent_title": "索引、规范化与技术控制",
+      "qa_draft": [
+        "用一句话说明「判断 robots.txt 适用边界」解决的 SEO 决策问题。",
+        "给出一个误用「判断 robots.txt 适用边界」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「判断 robots.txt 适用边界」的检查动作。"
+      ]
+    },
+    {
+      "title": "区分 noindex、robots.txt、删除与密码保护",
+      "description": "为不想展示的页面选择正确控制方式。",
+      "domain": "indexing",
+      "concept_fingerprint": [
+        "noindex",
+        "removal",
+        "access-control"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "critical",
+      "mastery_threshold": 0.95,
+      "risk_note": "控制方式选错会导致页面继续展示或重要页无法抓取。",
+      "is_atomic": true,
+      "parent_title": "索引、规范化与技术控制",
+      "qa_draft": [
+        "用一句话说明「区分 noindex、robots.txt、删除与密码保护」解决的 SEO 决策问题。",
+        "给出一个误用「区分 noindex、robots.txt、删除与密码保护」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「区分 noindex、robots.txt、删除与密码保护」的检查动作。"
+      ]
+    },
+    {
+      "title": "选择 canonical URL 并统一内部链接",
+      "description": "为重复或近似页面选择规范 URL，并让内部链接指向同一版本。",
+      "domain": "indexing",
+      "concept_fingerprint": [
+        "canonical",
+        "duplicate-url",
+        "consolidation"
+      ],
+      "difficulty": 3,
+      "est_minutes": 15,
+      "strictness_level": "critical",
+      "mastery_threshold": 0.95,
+      "risk_note": "canonical 混乱会分散信号并引发索引版本错误。",
+      "is_atomic": true,
+      "parent_title": "索引、规范化与技术控制",
+      "qa_draft": [
+        "用一句话说明「选择 canonical URL 并统一内部链接」解决的 SEO 决策问题。",
+        "给出一个误用「选择 canonical URL 并统一内部链接」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「选择 canonical URL 并统一内部链接」的检查动作。"
+      ]
+    },
+    {
+      "title": "正确处理重定向、404、soft 404",
+      "description": "区分永久迁移、真实不存在和软 404 的信号差异。",
+      "domain": "indexing",
+      "concept_fingerprint": [
+        "redirect",
+        "not-found",
+        "soft-404"
+      ],
+      "difficulty": 3,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "错误状态码会让搜索系统误解页面可用性。",
+      "is_atomic": true,
+      "parent_title": "索引、规范化与技术控制",
+      "qa_draft": [
+        "用一句话说明「正确处理重定向、404、soft 404」解决的 SEO 决策问题。",
+        "给出一个误用「正确处理重定向、404、soft 404」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「正确处理重定向、404、soft 404」的检查动作。"
+      ]
+    },
+    {
+      "title": "诊断 GSC 中 Discovered/Crawled currently not indexed",
+      "description": "用 GSC 状态结合质量、重复、抓取阻塞和规范化做初步排查。",
+      "domain": "indexing",
+      "concept_fingerprint": [
+        "gsc-status",
+        "index-diagnostics",
+        "quality-check"
+      ],
+      "difficulty": 3,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "把未索引都归因给技术问题会漏掉质量和重复原因。",
+      "is_atomic": true,
+      "parent_title": "索引、规范化与技术控制",
+      "qa_draft": [
+        "用一句话说明「诊断 GSC 中 Discovered/Crawled currently not indexed」解决的 SEO 决策问题。",
+        "给出一个误用「诊断 GSC 中 Discovered/Crawled currently not indexed」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「诊断 GSC 中 Discovered/Crawled currently not indexed」的检查动作。"
+      ]
+    },
+    {
+      "title": "编写唯一、清晰、页面匹配的 title",
+      "description": "为每页写准确、唯一、能概括主目的的标题。",
+      "domain": "on-page-seo",
+      "concept_fingerprint": [
+        "title-link",
+        "page-purpose",
+        "snippet"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "标题夸张或重复会降低理解和点击质量。",
+      "is_atomic": true,
+      "parent_title": "页面内容与搜索呈现",
+      "qa_draft": [
+        "用一句话说明「编写唯一、清晰、页面匹配的 title」解决的 SEO 决策问题。",
+        "给出一个误用「编写唯一、清晰、页面匹配的 title」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「编写唯一、清晰、页面匹配的 title」的检查动作。"
+      ]
+    },
+    {
+      "title": "编写清晰摘要与首屏内容以帮助搜索理解",
+      "description": "在页面开头清楚回答主题、范围和读者能获得什么。",
+      "domain": "on-page-seo",
+      "concept_fingerprint": [
+        "summary",
+        "above-the-fold",
+        "relevance"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "首屏含糊会增加用户和搜索系统理解成本。",
+      "is_atomic": true,
+      "parent_title": "页面内容与搜索呈现",
+      "qa_draft": [
+        "用一句话说明「编写清晰摘要与首屏内容以帮助搜索理解」解决的 SEO 决策问题。",
+        "给出一个误用「编写清晰摘要与首屏内容以帮助搜索理解」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「编写清晰摘要与首屏内容以帮助搜索理解」的检查动作。"
+      ]
+    },
+    {
+      "title": "组织 headings、段落和 FAQ 以服务读者",
+      "description": "用标题层级、短段落和问题回答组织内容，而不是机械塞词。",
+      "domain": "on-page-seo",
+      "concept_fingerprint": [
+        "heading-structure",
+        "readability",
+        "qa-format"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "结构服务关键词而非读者会降低可读性和质量。",
+      "is_atomic": true,
+      "parent_title": "页面内容与搜索呈现",
+      "qa_draft": [
+        "用一句话说明「组织 headings、段落和 FAQ 以服务读者」解决的 SEO 决策问题。",
+        "给出一个误用「组织 headings、段落和 FAQ 以服务读者」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「组织 headings、段落和 FAQ 以服务读者」的检查动作。"
+      ]
+    },
+    {
+      "title": "添加图片 alt、文件名、上下文和视频文本",
+      "description": "让图片和视频通过替代文本、上下文和文本说明表达内容。",
+      "domain": "on-page-seo",
+      "concept_fingerprint": [
+        "image-seo",
+        "alt-text",
+        "media-context"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "媒体缺少文本上下文会降低可访问性和搜索理解。",
+      "is_atomic": true,
+      "parent_title": "页面内容与搜索呈现",
+      "qa_draft": [
+        "用一句话说明「添加图片 alt、文件名、上下文和视频文本」解决的 SEO 决策问题。",
+        "给出一个误用「添加图片 alt、文件名、上下文和视频文本」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「添加图片 alt、文件名、上下文和视频文本」的检查动作。"
+      ]
+    },
+    {
+      "title": "选择并验证适合页面主目的的结构化数据",
+      "description": "只为页面真实主内容添加合适 schema，并用测试工具验证。",
+      "domain": "on-page-seo",
+      "concept_fingerprint": [
+        "structured-data",
+        "rich-result",
+        "validation"
+      ],
+      "difficulty": 3,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "滥用结构化数据可能让搜索呈现资格受损。",
+      "is_atomic": true,
+      "parent_title": "页面内容与搜索呈现",
+      "qa_draft": [
+        "用一句话说明「选择并验证适合页面主目的的结构化数据」解决的 SEO 决策问题。",
+        "给出一个误用「选择并验证适合页面主目的的结构化数据」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「选择并验证适合页面主目的的结构化数据」的检查动作。"
+      ]
+    },
+    {
+      "title": "掌握移动优先索引影响",
+      "description": "理解 Google 主要使用移动版内容做索引和排名判断。",
+      "domain": "frontend-seo",
+      "concept_fingerprint": [
+        "mobile-first",
+        "parity",
+        "rendered-content"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "critical",
+      "mastery_threshold": 0.95,
+      "risk_note": "移动版缺内容会直接影响被索引的信息。",
+      "is_atomic": true,
+      "parent_title": "页面体验与前端 SEO",
+      "qa_draft": [
+        "用一句话说明「掌握移动优先索引影响」解决的 SEO 决策问题。",
+        "给出一个误用「掌握移动优先索引影响」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「掌握移动优先索引影响」的检查动作。"
+      ]
+    },
+    {
+      "title": "解释 LCP、INP、CLS 与 75 分位",
+      "description": "说明三个 Core Web Vitals 指标分别衡量加载、交互和视觉稳定性。",
+      "domain": "frontend-seo",
+      "concept_fingerprint": [
+        "lcp",
+        "inp",
+        "cls"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "误读指标会把工程优化投向错误瓶颈。",
+      "is_atomic": true,
+      "parent_title": "页面体验与前端 SEO",
+      "qa_draft": [
+        "用一句话说明「解释 LCP、INP、CLS 与 75 分位」解决的 SEO 决策问题。",
+        "给出一个误用「解释 LCP、INP、CLS 与 75 分位」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「解释 LCP、INP、CLS 与 75 分位」的检查动作。"
+      ]
+    },
+    {
+      "title": "识别 LCP 常见原因并选择一个首屏优化动作",
+      "description": "从图片、服务器响应、阻塞资源或客户端渲染中定位一个 LCP 改善点。",
+      "domain": "frontend-seo",
+      "concept_fingerprint": [
+        "lcp-diagnosis",
+        "critical-rendering",
+        "prioritization"
+      ],
+      "difficulty": 3,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "泛泛优化性能会浪费工程资源。",
+      "is_atomic": true,
+      "parent_title": "页面体验与前端 SEO",
+      "qa_draft": [
+        "用一句话说明「识别 LCP 常见原因并选择一个首屏优化动作」解决的 SEO 决策问题。",
+        "给出一个误用「识别 LCP 常见原因并选择一个首屏优化动作」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「识别 LCP 常见原因并选择一个首屏优化动作」的检查动作。"
+      ]
+    },
+    {
+      "title": "避免干扰性广告、弹窗与布局偏移",
+      "description": "识别影响页面体验和内容可访问性的干扰元素。",
+      "domain": "frontend-seo",
+      "concept_fingerprint": [
+        "page-experience",
+        "intrusive-ui",
+        "layout-stability"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "干扰体验会伤害用户任务完成和搜索感知质量。",
+      "is_atomic": true,
+      "parent_title": "页面体验与前端 SEO",
+      "qa_draft": [
+        "用一句话说明「避免干扰性广告、弹窗与布局偏移」解决的 SEO 决策问题。",
+        "给出一个误用「避免干扰性广告、弹窗与布局偏移」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「避免干扰性广告、弹窗与布局偏移」的检查动作。"
+      ]
+    },
+    {
+      "title": "判断 Googlebot 是否能看到主要内容",
+      "description": "用渲染检查确认主要文本、链接和元信息在抓取后可见。",
+      "domain": "frontend-seo",
+      "concept_fingerprint": [
+        "rendered-html",
+        "googlebot",
+        "content-visibility"
+      ],
+      "difficulty": 3,
+      "est_minutes": 15,
+      "strictness_level": "critical",
+      "mastery_threshold": 0.95,
+      "risk_note": "Googlebot 看不到的核心内容无法稳定参与索引和排名。",
+      "is_atomic": true,
+      "parent_title": "页面体验与前端 SEO",
+      "qa_draft": [
+        "用一句话说明「判断 Googlebot 是否能看到主要内容」解决的 SEO 决策问题。",
+        "给出一个误用「判断 Googlebot 是否能看到主要内容」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「判断 Googlebot 是否能看到主要内容」的检查动作。"
+      ]
+    },
+    {
+      "title": "选择 SSR、预渲染或客户端渲染边界",
+      "description": "根据页面重要性、更新频率和交互需求选择渲染策略。",
+      "domain": "frontend-seo",
+      "concept_fingerprint": [
+        "ssr",
+        "prerender",
+        "csr-boundary"
+      ],
+      "difficulty": 3,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "所有页面都 CSR 可能增加索引和性能不确定性。",
+      "is_atomic": true,
+      "parent_title": "页面体验与前端 SEO",
+      "qa_draft": [
+        "用一句话说明「选择 SSR、预渲染或客户端渲染边界」解决的 SEO 决策问题。",
+        "给出一个误用「选择 SSR、预渲染或客户端渲染边界」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「选择 SSR、预渲染或客户端渲染边界」的检查动作。"
+      ]
+    },
+    {
+      "title": "保证 History API URL 可直接访问",
+      "description": "确保前端路由 URL 可被直接打开、返回正确内容和状态码。",
+      "domain": "frontend-seo",
+      "concept_fingerprint": [
+        "history-api",
+        "deep-link",
+        "routing"
+      ],
+      "difficulty": 3,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "不可直达 URL 会破坏抓取、分享和用户恢复访问。",
+      "is_atomic": true,
+      "parent_title": "页面体验与前端 SEO",
+      "qa_draft": [
+        "用一句话说明「保证 History API URL 可直接访问」解决的 SEO 决策问题。",
+        "给出一个误用「保证 History API URL 可直接访问」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「保证 History API URL 可直接访问」的检查动作。"
+      ]
+    },
+    {
+      "title": "建立可信作者、来源和关于页信号",
+      "description": "让用户能判断谁写的、凭什么可信、如何联系和验证。",
+      "domain": "authority-policy",
+      "concept_fingerprint": [
+        "authorship",
+        "source-transparency",
+        "trust"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "匿名泛化内容在高风险主题中尤其难建立信任。",
+      "is_atomic": true,
+      "parent_title": "权威、分发与合规增长",
+      "qa_draft": [
+        "用一句话说明「建立可信作者、来源和关于页信号」解决的 SEO 决策问题。",
+        "给出一个误用「建立可信作者、来源和关于页信号」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「建立可信作者、来源和关于页信号」的检查动作。"
+      ]
+    },
+    {
+      "title": "获取真实引用与外部链接而非操纵链接",
+      "description": "通过产品价值、数据、工具、研究或合作获得自然引用。",
+      "domain": "authority-policy",
+      "concept_fingerprint": [
+        "link-earning",
+        "citation",
+        "distribution"
+      ],
+      "difficulty": 3,
+      "est_minutes": 15,
+      "strictness_level": "critical",
+      "mastery_threshold": 0.95,
+      "risk_note": "操纵链接是高风险 spam 行为。",
+      "is_atomic": true,
+      "parent_title": "权威、分发与合规增长",
+      "qa_draft": [
+        "用一句话说明「获取真实引用与外部链接而非操纵链接」解决的 SEO 决策问题。",
+        "给出一个误用「获取真实引用与外部链接而非操纵链接」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「获取真实引用与外部链接而非操纵链接」的检查动作。"
+      ]
+    },
+    {
+      "title": "管理 UGC 链接 nofollow 和 sponsored",
+      "description": "为用户生成、赞助或不背书链接使用合适 rel 属性。",
+      "domain": "authority-policy",
+      "concept_fingerprint": [
+        "ugc",
+        "nofollow",
+        "sponsored"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "未标记付费或不可信链接会传递错误信号。",
+      "is_atomic": true,
+      "parent_title": "权威、分发与合规增长",
+      "qa_draft": [
+        "用一句话说明「管理 UGC 链接 nofollow 和 sponsored」解决的 SEO 决策问题。",
+        "给出一个误用「管理 UGC 链接 nofollow 和 sponsored」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「管理 UGC 链接 nofollow 和 sponsored」的检查动作。"
+      ]
+    },
+    {
+      "title": "识别关键词堆砌、规模化低质内容和过期日期刷新",
+      "description": "辨认常见低质或欺骗性内容模式。",
+      "domain": "authority-policy",
+      "concept_fingerprint": [
+        "keyword-stuffing",
+        "thin-content",
+        "freshness-abuse"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "critical",
+      "mastery_threshold": 0.95,
+      "risk_note": "这些做法可能触发质量或 spam 风险。",
+      "is_atomic": true,
+      "parent_title": "权威、分发与合规增长",
+      "qa_draft": [
+        "用一句话说明「识别关键词堆砌、规模化低质内容和过期日期刷新」解决的 SEO 决策问题。",
+        "给出一个误用「识别关键词堆砌、规模化低质内容和过期日期刷新」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「识别关键词堆砌、规模化低质内容和过期日期刷新」的检查动作。"
+      ]
+    },
+    {
+      "title": "识别 scaled content abuse、site reputation abuse 和 expired domain abuse",
+      "description": "理解现代 spam policy 中针对规模化滥用、站点声誉滥用和过期域名滥用的边界。",
+      "domain": "authority-policy",
+      "concept_fingerprint": [
+        "scaled-abuse",
+        "site-reputation",
+        "expired-domain"
+      ],
+      "difficulty": 3,
+      "est_minutes": 15,
+      "strictness_level": "critical",
+      "mastery_threshold": 0.95,
+      "risk_note": "高增长阶段若误用这些策略会带来系统性风险。",
+      "is_atomic": true,
+      "parent_title": "权威、分发与合规增长",
+      "qa_draft": [
+        "用一句话说明「识别 scaled content abuse、site reputation abuse 和 expired domain abuse」解决的 SEO 决策问题。",
+        "给出一个误用「识别 scaled content abuse、site reputation abuse 和 expired domain abuse」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「识别 scaled content abuse、site reputation abuse 和 expired domain abuse」的检查动作。"
+      ]
+    },
+    {
+      "title": "制定内容更新、合并、删除决策",
+      "description": "根据表现、重复度、质量和业务价值选择更新、合并或删除。",
+      "domain": "authority-policy",
+      "concept_fingerprint": [
+        "content-pruning",
+        "refresh",
+        "consolidation"
+      ],
+      "difficulty": 3,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "盲目刷新或删除会损伤已有信号和用户路径。",
+      "is_atomic": true,
+      "parent_title": "权威、分发与合规增长",
+      "qa_draft": [
+        "用一句话说明「制定内容更新、合并、删除决策」解决的 SEO 决策问题。",
+        "给出一个误用「制定内容更新、合并、删除决策」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「制定内容更新、合并、删除决策」的检查动作。"
+      ]
+    },
+    {
+      "title": "配置 Search Console 属性、sitemap 和 URL Inspection",
+      "description": "完成 GSC 属性验证、sitemap 提交和单 URL 检查入口。",
+      "domain": "seo-analytics",
+      "concept_fingerprint": [
+        "gsc-setup",
+        "url-inspection",
+        "sitemap-submit"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "critical",
+      "mastery_threshold": 0.95,
+      "risk_note": "没有可靠数据源会让 SEO 诊断停留在猜测。",
+      "is_atomic": true,
+      "parent_title": "数据分析、实验与扩张运营",
+      "qa_draft": [
+        "用一句话说明「配置 Search Console 属性、sitemap 和 URL Inspection」解决的 SEO 决策问题。",
+        "给出一个误用「配置 Search Console 属性、sitemap 和 URL Inspection」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「配置 Search Console 属性、sitemap 和 URL Inspection」的检查动作。"
+      ]
+    },
+    {
+      "title": "读懂点击、曝光、CTR、平均排名",
+      "description": "解释 Search Console Performance 报表的四个核心指标和局限。",
+      "domain": "seo-analytics",
+      "concept_fingerprint": [
+        "clicks",
+        "impressions",
+        "ctr-position"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "critical",
+      "mastery_threshold": 0.95,
+      "risk_note": "误读平均排名或 CTR 会造成错误优化优先级。",
+      "is_atomic": true,
+      "parent_title": "数据分析、实验与扩张运营",
+      "qa_draft": [
+        "用一句话说明「读懂点击、曝光、CTR、平均排名」解决的 SEO 决策问题。",
+        "给出一个误用「读懂点击、曝光、CTR、平均排名」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「读懂点击、曝光、CTR、平均排名」的检查动作。"
+      ]
+    },
+    {
+      "title": "构建页面-查询-意图矩阵",
+      "description": "把页面、查询、意图和当前表现连成运营表。",
+      "domain": "seo-analytics",
+      "concept_fingerprint": [
+        "query-page-matrix",
+        "intent-map",
+        "portfolio"
+      ],
+      "difficulty": 3,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "没有矩阵会难以判断该优化页面还是新建页面。",
+      "is_atomic": true,
+      "parent_title": "数据分析、实验与扩张运营",
+      "qa_draft": [
+        "用一句话说明「构建页面-查询-意图矩阵」解决的 SEO 决策问题。",
+        "给出一个误用「构建页面-查询-意图矩阵」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「构建页面-查询-意图矩阵」的检查动作。"
+      ]
+    },
+    {
+      "title": "定义 SEO 实验假设与成功指标",
+      "description": "为标题、内容、内链或技术改动写清假设和主要指标。",
+      "domain": "seo-analytics",
+      "concept_fingerprint": [
+        "hypothesis",
+        "success-metric",
+        "experiment-design"
+      ],
+      "difficulty": 3,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "没有假设会让改动后无法判断因果。",
+      "is_atomic": true,
+      "parent_title": "数据分析、实验与扩张运营",
+      "qa_draft": [
+        "用一句话说明「定义 SEO 实验假设与成功指标」解决的 SEO 决策问题。",
+        "给出一个误用「定义 SEO 实验假设与成功指标」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「定义 SEO 实验假设与成功指标」的检查动作。"
+      ]
+    },
+    {
+      "title": "设置 SEO 实验等待窗口并避免过早判断",
+      "description": "根据抓取、索引、排名波动和样本量设定观察期。",
+      "domain": "seo-analytics",
+      "concept_fingerprint": [
+        "waiting-window",
+        "seasonality",
+        "sample-size"
+      ],
+      "difficulty": 3,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "过早判断会把正常波动误当成优化结果。",
+      "is_atomic": true,
+      "parent_title": "数据分析、实验与扩张运营",
+      "qa_draft": [
+        "用一句话说明「设置 SEO 实验等待窗口并避免过早判断」解决的 SEO 决策问题。",
+        "给出一个误用「设置 SEO 实验等待窗口并避免过早判断」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「设置 SEO 实验等待窗口并避免过早判断」的检查动作。"
+      ]
+    },
+    {
+      "title": "用查询维度定位流量下跌",
+      "description": "先看下跌集中在哪些查询和意图簇。",
+      "domain": "seo-analytics",
+      "concept_fingerprint": [
+        "query-drop",
+        "intent-shift",
+        "diagnosis"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "不分查询会把需求变化误判为整站问题。",
+      "is_atomic": true,
+      "parent_title": "数据分析、实验与扩张运营",
+      "qa_draft": [
+        "用一句话说明「用查询维度定位流量下跌」解决的 SEO 决策问题。",
+        "给出一个误用「用查询维度定位流量下跌」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「用查询维度定位流量下跌」的检查动作。"
+      ]
+    },
+    {
+      "title": "用页面维度定位流量下跌",
+      "description": "判断下跌集中在少数页面、目录还是全站模板。",
+      "domain": "seo-analytics",
+      "concept_fingerprint": [
+        "page-drop",
+        "template-risk",
+        "segmentation"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "不分页面会错过模板故障或局部竞争变化。",
+      "is_atomic": true,
+      "parent_title": "数据分析、实验与扩张运营",
+      "qa_draft": [
+        "用一句话说明「用页面维度定位流量下跌」解决的 SEO 决策问题。",
+        "给出一个误用「用页面维度定位流量下跌」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「用页面维度定位流量下跌」的检查动作。"
+      ]
+    },
+    {
+      "title": "用国家、设备和 SERP 特性定位流量下跌",
+      "description": "检查下跌是否由地区、设备、搜索功能或 CTR 变化驱动。",
+      "domain": "seo-analytics",
+      "concept_fingerprint": [
+        "country-device",
+        "serp-feature",
+        "ctr-drop"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "忽略维度变化会误判算法、季节性或呈现变化。",
+      "is_atomic": true,
+      "parent_title": "数据分析、实验与扩张运营",
+      "qa_draft": [
+        "用一句话说明「用国家、设备和 SERP 特性定位流量下跌」解决的 SEO 决策问题。",
+        "给出一个误用「用国家、设备和 SERP 特性定位流量下跌」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「用国家、设备和 SERP 特性定位流量下跌」的检查动作。"
+      ]
+    },
+    {
+      "title": "解释 AI Overviews/AI Mode 仍依赖 Search index 和质量系统",
+      "description": "说明 Google AI 搜索体验仍以 Search 索引、抓取和质量原则为基础。",
+      "domain": "ai-search",
+      "concept_fingerprint": [
+        "ai-overviews",
+        "search-index",
+        "quality-system"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "把 AI 搜索当成独立黑箱会导致放弃基础 SEO。",
+      "is_atomic": true,
+      "parent_title": "生成式 AI 搜索与未来适配",
+      "qa_draft": [
+        "用一句话说明「解释 AI Overviews/AI Mode 仍依赖 Search index 和质量系统」解决的 SEO 决策问题。",
+        "给出一个误用「解释 AI Overviews/AI Mode 仍依赖 Search index 和质量系统」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「解释 AI Overviews/AI Mode 仍依赖 Search index 和质量系统」的检查动作。"
+      ]
+    },
+    {
+      "title": "应对 query fan-out：覆盖任务而非堆页面",
+      "description": "理解复杂查询会被拆成相关子查询，内容应覆盖真实任务链。",
+      "domain": "ai-search",
+      "concept_fingerprint": [
+        "query-fanout",
+        "task-coverage",
+        "information-gain"
+      ],
+      "difficulty": 3,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "为每个变体堆页面会造成重复和低质内容。",
+      "is_atomic": true,
+      "parent_title": "生成式 AI 搜索与未来适配",
+      "qa_draft": [
+        "用一句话说明「应对 query fan-out：覆盖任务而非堆页面」解决的 SEO 决策问题。",
+        "给出一个误用「应对 query fan-out：覆盖任务而非堆页面」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「应对 query fan-out：覆盖任务而非堆页面」的检查动作。"
+      ]
+    },
+    {
+      "title": "创作非商品化、专家型内容以适配 AI 搜索",
+      "description": "通过经验、细节、限制条件和独特材料提升被引用和满足任务的概率。",
+      "domain": "ai-search",
+      "concept_fingerprint": [
+        "expert-content",
+        "non-commodity",
+        "evidence"
+      ],
+      "difficulty": 3,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "泛化 AI 改写内容难以在 AI 搜索中形成差异。",
+      "is_atomic": true,
+      "parent_title": "生成式 AI 搜索与未来适配",
+      "qa_draft": [
+        "用一句话说明「创作非商品化、专家型内容以适配 AI 搜索」解决的 SEO 决策问题。",
+        "给出一个误用「创作非商品化、专家型内容以适配 AI 搜索」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「创作非商品化、专家型内容以适配 AI 搜索」的检查动作。"
+      ]
+    },
+    {
+      "title": "区分 Google AI 搜索建议与第三方 AEO/GEO 主张",
+      "description": "把 Google 官方建议、可验证实验和第三方猜测分开处理。",
+      "domain": "ai-search",
+      "concept_fingerprint": [
+        "claim-evaluation",
+        "geo-aeo",
+        "evidence"
+      ],
+      "difficulty": 2,
+      "est_minutes": 15,
+      "strictness_level": "standard",
+      "mastery_threshold": 0.8,
+      "risk_note": "把未经证实的技巧当事实会浪费资源甚至触发风险。",
+      "is_atomic": true,
+      "parent_title": "生成式 AI 搜索与未来适配",
+      "qa_draft": [
+        "用一句话说明「区分 Google AI 搜索建议与第三方 AEO/GEO 主张」解决的 SEO 决策问题。",
+        "给出一个误用「区分 Google AI 搜索建议与第三方 AEO/GEO 主张」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「区分 Google AI 搜索建议与第三方 AEO/GEO 主张」的检查动作。"
+      ]
+    },
+    {
+      "title": "为 agent 可访问性准备清晰 DOM 和任务流程",
+      "description": "让重要内容、链接、表单和任务步骤在语义化 DOM 中清楚可达。",
+      "domain": "ai-search",
+      "concept_fingerprint": [
+        "semantic-dom",
+        "agent-readiness",
+        "task-flow"
+      ],
+      "difficulty": 3,
+      "est_minutes": 15,
+      "strictness_level": "familiarity",
+      "mastery_threshold": 0.6,
+      "risk_note": "这是 future/optional 分支，不是 Google Search 的直接排名因素。",
+      "is_atomic": true,
+      "parent_title": "生成式 AI 搜索与未来适配",
+      "qa_draft": [
+        "用一句话说明「为 agent 可访问性准备清晰 DOM 和任务流程」解决的 SEO 决策问题。",
+        "给出一个误用「为 agent 可访问性准备清晰 DOM 和任务流程」的反例，并说明可能造成的搜索风险。",
+        "列出一个可在真实页面或 Search Console 中验证「为 agent 可访问性准备清晰 DOM 和任务流程」的检查动作。"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from_title": "区分 SEO 流量目标与 DAU 业务目标",
+      "to_title": "拆解 SEO 增长漏斗：曝光、CTR、访问、激活、留存",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "解释 Google 的发现、抓取、索引、排名流程",
+      "to_title": "识别 Search Essentials 的技术、政策、最佳实践三层",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "解释 Google 的发现、抓取、索引、排名流程",
+      "to_title": "使用 site: 快速检查公开收录",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "识别 Search Essentials 的技术、政策、最佳实践三层",
+      "to_title": "使用 site: 快速检查公开收录",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "定义受众任务与搜索意图",
+      "to_title": "将搜索意图映射为页面类型和内容格式",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "将搜索意图映射为页面类型和内容格式",
+      "to_title": "建立轻量主题地图",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "用 SERP 观察区分信息型、商业型、导航型查询",
+      "to_title": "用四象限评分判断关键词机会",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "建立轻量主题地图",
+      "to_title": "用四象限评分判断关键词机会",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "用四象限评分判断关键词机会",
+      "to_title": "识别内容缺口与非商品化角度",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "识别内容缺口与非商品化角度",
+      "to_title": "规划一手经验证据",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "解释 Google 的发现、抓取、索引、排名流程",
+      "to_title": "设计清晰目录与 URL 模式",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "设计清晰目录与 URL 模式",
+      "to_title": "保证内部链接使用可抓取 a href",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "建立轻量主题地图",
+      "to_title": "构建主题集群与枢纽页链接路径",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "保证内部链接使用可抓取 a href",
+      "to_title": "构建主题集群与枢纽页链接路径",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "构建主题集群与枢纽页链接路径",
+      "to_title": "识别孤岛页、分页和筛选页风险",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "构建主题集群与枢纽页链接路径",
+      "to_title": "生成并维护 XML sitemap 与 lastmod",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "生成并维护 XML sitemap 与 lastmod",
+      "to_title": "判断大型站点 crawl budget 风险",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "识别孤岛页、分页和筛选页风险",
+      "to_title": "判断大型站点 crawl budget 风险",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "识别 Search Essentials 的技术、政策、最佳实践三层",
+      "to_title": "判断 robots.txt 适用边界",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "判断 robots.txt 适用边界",
+      "to_title": "区分 noindex、robots.txt、删除与密码保护",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "设计清晰目录与 URL 模式",
+      "to_title": "选择 canonical URL 并统一内部链接",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "选择 canonical URL 并统一内部链接",
+      "to_title": "正确处理重定向、404、soft 404",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "区分 noindex、robots.txt、删除与密码保护",
+      "to_title": "诊断 GSC 中 Discovered/Crawled currently not indexed",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "选择 canonical URL 并统一内部链接",
+      "to_title": "诊断 GSC 中 Discovered/Crawled currently not indexed",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "配置 Search Console 属性、sitemap 和 URL Inspection",
+      "to_title": "诊断 GSC 中 Discovered/Crawled currently not indexed",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "定义受众任务与搜索意图",
+      "to_title": "编写唯一、清晰、页面匹配的 title",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "编写唯一、清晰、页面匹配的 title",
+      "to_title": "编写清晰摘要与首屏内容以帮助搜索理解",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "将搜索意图映射为页面类型和内容格式",
+      "to_title": "组织 headings、段落和 FAQ 以服务读者",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "组织 headings、段落和 FAQ 以服务读者",
+      "to_title": "添加图片 alt、文件名、上下文和视频文本",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "组织 headings、段落和 FAQ 以服务读者",
+      "to_title": "选择并验证适合页面主目的的结构化数据",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "解释 Google 的发现、抓取、索引、排名流程",
+      "to_title": "掌握移动优先索引影响",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "掌握移动优先索引影响",
+      "to_title": "解释 LCP、INP、CLS 与 75 分位",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "解释 LCP、INP、CLS 与 75 分位",
+      "to_title": "识别 LCP 常见原因并选择一个首屏优化动作",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "识别 LCP 常见原因并选择一个首屏优化动作",
+      "to_title": "避免干扰性广告、弹窗与布局偏移",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "保证内部链接使用可抓取 a href",
+      "to_title": "判断 Googlebot 是否能看到主要内容",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "判断 Googlebot 是否能看到主要内容",
+      "to_title": "选择 SSR、预渲染或客户端渲染边界",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "选择 SSR、预渲染或客户端渲染边界",
+      "to_title": "保证 History API URL 可直接访问",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "规划一手经验证据",
+      "to_title": "建立可信作者、来源和关于页信号",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "建立可信作者、来源和关于页信号",
+      "to_title": "获取真实引用与外部链接而非操纵链接",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "识别 Search Essentials 的技术、政策、最佳实践三层",
+      "to_title": "管理 UGC 链接 nofollow 和 sponsored",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "获取真实引用与外部链接而非操纵链接",
+      "to_title": "管理 UGC 链接 nofollow 和 sponsored",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "识别 Search Essentials 的技术、政策、最佳实践三层",
+      "to_title": "识别关键词堆砌、规模化低质内容和过期日期刷新",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "识别关键词堆砌、规模化低质内容和过期日期刷新",
+      "to_title": "识别 scaled content abuse、site reputation abuse 和 expired domain abuse",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "识别 scaled content abuse、site reputation abuse 和 expired domain abuse",
+      "to_title": "制定内容更新、合并、删除决策",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "生成并维护 XML sitemap 与 lastmod",
+      "to_title": "配置 Search Console 属性、sitemap 和 URL Inspection",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "使用 site: 快速检查公开收录",
+      "to_title": "配置 Search Console 属性、sitemap 和 URL Inspection",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "配置 Search Console 属性、sitemap 和 URL Inspection",
+      "to_title": "读懂点击、曝光、CTR、平均排名",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "读懂点击、曝光、CTR、平均排名",
+      "to_title": "构建页面-查询-意图矩阵",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "建立轻量主题地图",
+      "to_title": "构建页面-查询-意图矩阵",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "构建页面-查询-意图矩阵",
+      "to_title": "定义 SEO 实验假设与成功指标",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "定义 SEO 实验假设与成功指标",
+      "to_title": "设置 SEO 实验等待窗口并避免过早判断",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "读懂点击、曝光、CTR、平均排名",
+      "to_title": "用查询维度定位流量下跌",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "读懂点击、曝光、CTR、平均排名",
+      "to_title": "用页面维度定位流量下跌",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "读懂点击、曝光、CTR、平均排名",
+      "to_title": "用国家、设备和 SERP 特性定位流量下跌",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "诊断 GSC 中 Discovered/Crawled currently not indexed",
+      "to_title": "用页面维度定位流量下跌",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "解释 Google 的发现、抓取、索引、排名流程",
+      "to_title": "解释 AI Overviews/AI Mode 仍依赖 Search index 和质量系统",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "识别 Search Essentials 的技术、政策、最佳实践三层",
+      "to_title": "解释 AI Overviews/AI Mode 仍依赖 Search index 和质量系统",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "解释 AI Overviews/AI Mode 仍依赖 Search index 和质量系统",
+      "to_title": "应对 query fan-out：覆盖任务而非堆页面",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "建立轻量主题地图",
+      "to_title": "应对 query fan-out：覆盖任务而非堆页面",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "规划一手经验证据",
+      "to_title": "创作非商品化、专家型内容以适配 AI 搜索",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "解释 AI Overviews/AI Mode 仍依赖 Search index 和质量系统",
+      "to_title": "创作非商品化、专家型内容以适配 AI 搜索",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "解释 AI Overviews/AI Mode 仍依赖 Search index 和质量系统",
+      "to_title": "区分 Google AI 搜索建议与第三方 AEO/GEO 主张",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "识别 scaled content abuse、site reputation abuse 和 expired domain abuse",
+      "to_title": "区分 Google AI 搜索建议与第三方 AEO/GEO 主张",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "保证 History API URL 可直接访问",
+      "to_title": "为 agent 可访问性准备清晰 DOM 和任务流程",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    },
+    {
+      "from_title": "选择并验证适合页面主目的的结构化数据",
+      "to_title": "为 agent 可访问性准备清晰 DOM 和任务流程",
+      "edge_type": "prerequisite",
+      "weight": 1,
+      "analogy_desc": null
+    }
+  ],
+  "review": {
+    "status": "approved",
+    "provider": "codex",
+    "local_checks": [
+      {
+        "parent_title": "SEO 目标与搜索系统基础",
+        "status": "approved",
+        "provider": "codex",
+        "issues": [],
+        "suggestions_applied": [
+          "将 site: 公开收录检查与 Search Console 配置/验证拆开，修正 GSC 依赖方向。"
+        ]
+      },
+      {
+        "parent_title": "需求、关键词与内容机会",
+        "status": "approved",
+        "provider": "codex",
+        "issues": [],
+        "suggestions_applied": [
+          "拆细主题地图、页面类型映射、四象限机会评分、内容缺口和一手证据节点。"
+        ]
+      },
+      {
+        "parent_title": "站点信息架构与可抓取性",
+        "status": "approved",
+        "provider": "codex",
+        "issues": [],
+        "suggestions_applied": [
+          "补充孤岛页、分页、筛选页和大型站点 crawl budget 风险节点。"
+        ]
+      },
+      {
+        "parent_title": "索引、规范化与技术控制",
+        "status": "approved",
+        "provider": "codex",
+        "issues": [],
+        "suggestions_applied": [
+          "将未索引诊断限定为 GSC 状态、质量、重复、抓取阻塞和规范化的初步排查。"
+        ]
+      },
+      {
+        "parent_title": "页面内容与搜索呈现",
+        "status": "approved",
+        "provider": "codex",
+        "issues": [],
+        "suggestions_applied": [
+          "将摘要节点改为帮助搜索理解，避免暗示可以控制 Google 片段。"
+        ]
+      },
+      {
+        "parent_title": "页面体验与前端 SEO",
+        "status": "approved",
+        "provider": "codex",
+        "issues": [],
+        "suggestions_applied": [
+          "拆细性能和 JavaScript SEO：LCP 原因、Googlebot 可见性、渲染边界和 History API 可直达。"
+        ]
+      },
+      {
+        "parent_title": "权威、分发与合规增长",
+        "status": "approved",
+        "provider": "codex",
+        "issues": [],
+        "suggestions_applied": [
+          "补充 scaled content abuse、site reputation abuse 和 expired domain abuse 风险节点。"
+        ]
+      },
+      {
+        "parent_title": "数据分析、实验与扩张运营",
+        "status": "approved",
+        "provider": "codex",
+        "issues": [],
+        "suggestions_applied": [
+          "拆细 SEO 实验假设、等待窗口和三类流量下跌诊断视角，并将诊断视角改为并列依赖核心指标。"
+        ]
+      },
+      {
+        "parent_title": "生成式 AI 搜索与未来适配",
+        "status": "approved",
+        "provider": "codex",
+        "issues": [],
+        "suggestions_applied": [
+          "将第三方 AEO/GEO 表述改为证据辨析，并把 agent 可访问性标注为 future/optional 分支。"
+        ]
+      }
+    ],
+    "global_check": {
+      "status": "approved",
+      "provider": "codex",
+      "issues": [],
+      "suggestions_applied": [
+        "修正 Search Console 相关依赖方向。",
+        "所有 prerequisite edge 均限制在原子节点之间。",
+        "本地校验通过：一个 root、标题引用精确匹配、父子树连通、无重复边、无环。"
+      ]
+    },
+    "issues": [],
+    "suggestions_applied": [
+      "根据第一轮审查拆细过宽原子节点。",
+      "根据第二轮审查保留 future/optional agent 分支说明，并调整流量下跌诊断依赖。"
+    ]
+  },
+  "unresolved_questions": [
+    "如果目标网站需要多语言或多地区增长，应增加 hreflang、地区化内容和国际化站点结构分支。",
+    "agent 可访问性是 future/optional 分支，不应理解为 Google Search 的直接排名因素。"
+  ]
+}

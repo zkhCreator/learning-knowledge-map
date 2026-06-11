@@ -80,7 +80,7 @@ class TestForwardDecompose:
         mock_call.return_value = {"children": [_child("N")]}
         forward_decompose = decomposer.forward_decompose
         # depth == MAX_DECOMPOSE_DEPTH - 1 → warning injected
-        from src import config
+        from src.infrastructure import config
         depth = config.MAX_DECOMPOSE_DEPTH - 1
         forward_decompose("Goal", "", "", [], depth)
         user_prompt = mock_call.call_args[0][1]
@@ -125,7 +125,7 @@ class TestDecomposeGoal:
             APPROVED_REVIEW,                                       # reverse
         ]
         from src.agents.decomposer import decompose_goal
-        from src.db import database as db
+        from src.data import database as db
 
         goal = make_goal("Learn X")
         atomic = decompose_goal(goal_id=goal["id"], root_title="Learn X")
@@ -156,7 +156,7 @@ class TestDecomposeGoal:
     @patch("src.agents.decomposer.llm.call_json")
     def test_max_retries_exceeded_uses_last_result(self, mock_call, tmp_db, make_goal):
         """If reverse keeps rejecting beyond MAX_RETRIES, use last forward result."""
-        from src import config
+        from src.infrastructure import config
         # Always reject
         side_effects = []
         for _ in range(config.MAX_DECOMPOSE_RETRIES + 1):
@@ -191,7 +191,7 @@ class TestDecomposeGoal:
     @patch("src.agents.decomposer.llm.call_json")
     def test_empty_children_from_forward_skips_node(self, mock_call, tmp_db, make_goal):
         """Forward returning empty children beyond retries just skips that branch."""
-        from src import config
+        from src.infrastructure import config
         side_effects = []
         for _ in range(config.MAX_DECOMPOSE_RETRIES + 1):
             side_effects.append({"children": []})
@@ -216,7 +216,7 @@ class TestDecomposeGoal:
     @patch("src.agents.decomposer.llm.call_json")
     def test_intra_sibling_edges_created(self, mock_call, tmp_db, make_goal):
         """Prerequisites between siblings (referenced by title) become DB edges."""
-        from src.db import database as db
+        from src.data import database as db
         mock_call.side_effect = [
             {
                 "children": [
@@ -237,7 +237,7 @@ class TestDecomposeGoal:
     @patch("src.agents.decomposer.llm.call_json")
     def test_max_depth_forces_atomic(self, mock_call, tmp_db, make_goal):
         """At MAX_DECOMPOSE_DEPTH all children are forced to is_atomic=True."""
-        from src import config
+        from src.infrastructure import config
         from src.agents import decomposer
 
         # We'll call _recurse directly at max depth
@@ -249,7 +249,7 @@ class TestDecomposeGoal:
             mock_rev.return_value = APPROVED_REVIEW
 
             goal = make_goal("G")
-            from src.db import database as db
+            from src.data import database as db
             root = db.create_node("Root", goal_id=goal["id"], is_atomic=False)
             atomic: list = []
             decomposer._recurse(

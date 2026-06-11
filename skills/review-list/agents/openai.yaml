@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review List"
+  short_description: "Show the Ebbinghaus review queue grouped by urgency"
+  default_prompt: "Show the user's spaced-repetition review queue in the workflow host: read pending review_schedule entries and group them by critical / overdue / today / future, optionally hiding future reviews. Read-only — do not start a review or reschedule."

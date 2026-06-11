@@ -21,9 +21,9 @@ def tmp_db(tmp_path, monkeypatch):
     Automatically initialises the full schema before yielding.
     """
     db_file = tmp_path / "test_learning.db"
-    monkeypatch.setattr("src.config.DB_PATH", db_file)
+    monkeypatch.setattr("src.infrastructure.config.DB_PATH", db_file)
     # Re-import database so get_connection() picks up the patched path
-    from src.db import database as db
+    from src.data import database as db
     db.init_db()
     yield db_file
 
@@ -33,7 +33,7 @@ def tmp_db(tmp_path, monkeypatch):
 @pytest.fixture
 def make_goal(tmp_db):
     """Return a callable that creates a learning_goal row."""
-    from src.db import database as db
+    from src.data import database as db
 
     def _factory(title="Test Goal", user_id="default"):
         return db.create_goal(title=title, user_id=user_id)
@@ -44,7 +44,7 @@ def make_goal(tmp_db):
 @pytest.fixture
 def make_node(tmp_db):
     """Return a callable that creates a knowledge_node row."""
-    from src.db import database as db
+    from src.data import database as db
 
     def _factory(
         title="Test Node",
@@ -76,7 +76,7 @@ def make_node(tmp_db):
 @pytest.fixture
 def make_outline(tmp_db, make_node):
     """Return a callable that creates a validated outline row for a node."""
-    from src.db import database as db
+    from src.data import database as db
 
     def _factory(node_id=None, sections=None, user_id="default"):
         if node_id is None:

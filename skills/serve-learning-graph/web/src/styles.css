@@ -1,0 +1,1278 @@
+/*
+File: skills/serve-learning-graph/web/src/styles.css
+
+Purpose:
+    Shared design tokens and base styling for the GUI workflow host shell.
+
+Responsibilities:
+    - Pull in Tailwind v4 + HeroUI v3 theme via @heroui/react styles
+    - Tell Tailwind v4 to scan HeroUI's dist for the classes its components emit
+    - Define neutral-base workflow tokens (blue action, green mastery,
+      yellow review-due, red risk, cyan analogy) shared by every flow
+    - Keep graph-only React Flow node/edge/detail styles intact
+
+What this file does NOT do:
+    - Encode graph layout positions
+    - Hold workflow feature state
+    - Override HeroUI component internals
+
+Inputs: none (static stylesheet)
+Outputs: Global CSS for the app shell and graph view
+*/
+
+/* HeroUI v3 ships its own `@import "tailwindcss"` plus theme/components.
+   Importing the package entry is the supported Tailwind v4 + HeroUI setup;
+   no JS tailwind.config / PostCSS plugin is required for v4. */
+@import "@heroui/react/styles";
+
+/* Tailwind v4 only generates classes it can see. HeroUI components emit
+   utility classes from their pre-built dist, so register it as a source. */
+@source "../node_modules/@heroui/react/dist";
+
+/* Shared workflow tokens (doc/14 视觉风格). Neutral base, semantic accents. */
+@theme {
+  --color-workflow-surface: #f6f7f9;
+  --color-workflow-panel: #ffffff;
+  --color-workflow-border: #dce2ea;
+  --color-workflow-action: #2563eb;
+  --color-workflow-mastery: #17664a;
+  --color-workflow-review: #8a5a08;
+  --color-workflow-risk: #b91c1c;
+  --color-workflow-analogy: #0f766e;
+}
+
+:root {
+  color-scheme: light;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f6f7f9;
+  color: #18202d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: #f6f7f9;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+/* ----------------------------------------------------------------------- */
+/* App shell layout                                                        */
+/* ----------------------------------------------------------------------- */
+
+.host-shell {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  min-height: 100vh;
+}
+
+.host-summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px 18px;
+  background: #ffffff;
+  border-bottom: 1px solid #dce2ea;
+}
+
+.host-summary h1 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+.host-summary p {
+  margin: 5px 0 0;
+  max-width: 780px;
+  color: #667085;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+  min-width: 240px;
+}
+
+.summary span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid #dce2ea;
+  background: #fbfcfe;
+  color: #465568;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.host-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 18px;
+  background: #ffffff;
+  border-bottom: 1px solid #dce2ea;
+}
+
+.host-workspace {
+  min-height: 0;
+  min-width: 0;
+}
+
+/* Stable-size placeholder for not-yet-built flows. No layout jitter. */
+.flow-placeholder {
+  display: grid;
+  place-content: center;
+  gap: 10px;
+  min-height: calc(100vh - 140px);
+  padding: 32px;
+  text-align: center;
+}
+
+.flow-placeholder h2 {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: 0;
+}
+
+.flow-placeholder p {
+  margin: 0;
+  max-width: 460px;
+  color: #5f6f84;
+}
+
+.placeholder-tag {
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  min-height: 24px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid #c5d5ef;
+  background: #eef4ff;
+  color: #224e94;
+  font-size: 12px;
+}
+
+/* ── Assess flow (Module 3) ──────────────────────────────────────────────── */
+/* Tool-style workbench: a single bounded card, stable sizes, no jitter. */
+.assess-view {
+  display: flex;
+  justify-content: center;
+  min-height: calc(100vh - 140px);
+  padding: 24px;
+}
+
+.assess-card {
+  width: 100%;
+  max-width: 640px;
+  align-self: flex-start;
+}
+
+.assess-setup,
+.assess-probe,
+.assess-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.assess-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.assess-field > span {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3a475a;
+  letter-spacing: 0;
+}
+
+.assess-select {
+  min-height: 38px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--color-workflow-border, #dce2ea);
+  background: #fff;
+  color: #18202d;
+  font-size: 14px;
+}
+
+.assess-segments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.assess-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.assess-probe-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.assess-probe-num {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-workflow-action, #2563eb);
+}
+
+.assess-probe-node {
+  font-size: 13px;
+  color: #5f6f84;
+}
+
+.assess-question {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+
+.assess-last-result {
+  display: flex;
+}
+
+.assess-summary-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.assess-next-hint {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #3a475a;
+}
+
+.assess-next-hint small {
+  color: #5f6f84;
+}
+
+.assess-error {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #f0c2c2;
+  background: #fdf0f0;
+  color: var(--color-workflow-risk, #b91c1c);
+  font-size: 13px;
+}
+
+/* ── Learn flow (Module 4) ───────────────────────────────────────────────── */
+/* Tool-style workbench: a bounded card with a fixed-height chat log so new   */
+/* messages scroll inside the log instead of growing the page (no jitter).    */
+.learn-view {
+  display: flex;
+  justify-content: center;
+  min-height: calc(100vh - 140px);
+  padding: 24px;
+}
+
+.learn-card {
+  width: 100%;
+  max-width: 720px;
+  align-self: flex-start;
+}
+
+.learn-setup,
+.learn-session {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.learn-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.learn-field > span {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3a475a;
+  letter-spacing: 0;
+}
+
+.learn-select,
+.learn-input {
+  min-height: 38px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--color-workflow-border, #dce2ea);
+  background: #fff;
+  color: #18202d;
+  font-size: 14px;
+}
+
+.learn-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.learn-node-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.learn-node-title {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.learn-node-domain {
+  font-size: 12px;
+  color: #5f6f84;
+}
+
+.learn-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.learn-progress-track {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: #e8edf4;
+  overflow: hidden;
+}
+
+.learn-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--color-workflow-action, #2563eb);
+  transition: width 0.25s ease;
+}
+
+.learn-progress-fill.is-ready {
+  background: var(--color-workflow-mastery, #16a34a);
+}
+
+.learn-progress-label {
+  font-size: 12px;
+  color: #5f6f84;
+  white-space: nowrap;
+}
+
+.learn-outline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.learn-outline-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  color: #5f6f84;
+}
+
+.learn-outline-item.is-covered {
+  color: var(--color-workflow-mastery, #16a34a);
+}
+
+.learn-outline-mark {
+  width: 14px;
+  text-align: center;
+}
+
+.learn-outline-title {
+  letter-spacing: 0;
+}
+
+.learn-exam-hint {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #bfe6cd;
+  background: #f0faf3;
+}
+
+.learn-exam-hint p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #3a475a;
+}
+
+.learn-exam-link {
+  margin: 0 4px;
+  color: var(--color-workflow-action, #2563eb);
+  font-weight: 600;
+}
+
+.learn-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.learn-chat-log {
+  height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--color-workflow-border, #dce2ea);
+  background: #fafbfd;
+}
+
+.learn-chat-empty {
+  margin: auto;
+  font-size: 13px;
+  color: #8a97a8;
+}
+
+.learn-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 85%;
+}
+
+.learn-msg-user {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.learn-msg-assistant {
+  align-self: flex-start;
+}
+
+.learn-msg-role {
+  font-size: 11px;
+  font-weight: 600;
+  color: #8a97a8;
+}
+
+.learn-msg-text {
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  letter-spacing: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.learn-msg-user .learn-msg-text {
+  background: #eef4ff;
+  color: #1e3a6e;
+}
+
+.learn-msg-assistant .learn-msg-text {
+  background: #fff;
+  border: 1px solid var(--color-workflow-border, #dce2ea);
+  color: #18202d;
+}
+
+.learn-error {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #f0c2c2;
+  background: #fdf0f0;
+  color: var(--color-workflow-risk, #b91c1c);
+  font-size: 13px;
+}
+
+/* ----------------------------------------------------------------------- */
+/* Graph view (preserved from the graph-only app)                          */
+/* ----------------------------------------------------------------------- */
+
+.graph-view {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 0;
+  height: calc(100vh - 140px);
+  min-height: 0;
+}
+
+.flow-surface {
+  min-width: 0;
+  height: 100%;
+  background: #eef2f7;
+}
+
+.detail-panel {
+  min-width: 0;
+  height: 100%;
+  overflow: auto;
+  padding: 16px;
+  background: #ffffff;
+  border-left: 1px solid #dce2ea;
+}
+
+.detail-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 10px;
+}
+
+.detail-panel h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  line-height: 1.28;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.description {
+  margin: 0 0 16px;
+  color: #5f6f84;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 8px 12px;
+  margin: 0 0 18px;
+}
+
+.facts dt {
+  color: #667085;
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.detail-section {
+  margin-top: 16px;
+}
+
+.detail-section h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: #465568;
+}
+
+.related-list {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.related-list li {
+  display: grid;
+  gap: 3px;
+  padding: 8px 9px;
+  border: 1px solid #dce2ea;
+  border-radius: 7px;
+  background: #fbfcfe;
+}
+
+.related-list small {
+  color: #667085;
+}
+
+.empty {
+  margin: 0;
+  color: #7a8797;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid #dce2ea;
+  background: #fbfcfe;
+  color: #465568;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.learning-node {
+  width: 230px;
+  min-height: 96px;
+  padding: 10px 11px;
+  border-radius: 8px;
+  border: 1px solid #cfd7e2;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(20, 31, 46, 0.08);
+}
+
+.learning-node.selected {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16), 0 8px 24px rgba(20, 31, 46, 0.08);
+}
+
+.learning-node.group {
+  border-color: #9fb8dc;
+  background: #f9fbff;
+}
+
+.learning-node.atomic {
+  border-color: #b7dbc9;
+}
+
+.node-title {
+  font-weight: 700;
+  line-height: 1.26;
+  overflow-wrap: anywhere;
+}
+
+.node-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  color: #667085;
+  font-size: 12px;
+}
+
+.node-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 9px;
+}
+
+.badge.atomic {
+  border-color: #b7dbc9;
+  background: #eef8f3;
+  color: #17664a;
+}
+
+.badge.group {
+  border-color: #c5d5ef;
+  background: #eef4ff;
+  color: #224e94;
+}
+
+.badge.status-mastered {
+  border-color: #a7d7bc;
+  background: #eaf8f0;
+  color: #17664a;
+}
+
+.badge.status-learning {
+  border-color: #b7c9ef;
+  background: #edf3ff;
+  color: #2b559e;
+}
+
+.badge.status-needs_review {
+  border-color: #ead19f;
+  background: #fff6e3;
+  color: #8a5a08;
+}
+
+.node-handle {
+  width: 9px;
+  height: 9px;
+  border: 2px solid #ffffff;
+  background: #2563eb;
+}
+
+.state-screen {
+  display: grid;
+  place-content: center;
+  min-height: 100vh;
+  padding: 24px;
+  text-align: center;
+}
+
+.state-screen h1 {
+  margin: 0 0 8px;
+  font-size: 24px;
+  letter-spacing: 0;
+}
+
+.react-flow__edge-text {
+  font-size: 10px;
+  font-weight: 700;
+  fill: #465568;
+}
+
+@media (max-width: 920px) {
+  .host-summary {
+    display: grid;
+  }
+
+  .summary {
+    justify-content: flex-start;
+    min-width: 0;
+  }
+
+  .graph-view {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .flow-surface {
+    height: 62vh;
+  }
+
+  .detail-panel {
+    height: auto;
+    border-left: 0;
+    border-top: 1px solid #dce2ea;
+  }
+}
+
+/* ── Exam flow (Module 5) ────────────────────────────────────────────────── */
+/* Bounded card; one question at a time with fixed control sizing so the      */
+/* layout does not jump between answer entry and per-question feedback.        */
+.exam-view {
+  display: flex;
+  justify-content: center;
+  min-height: calc(100vh - 140px);
+  padding: 24px;
+}
+
+.exam-card {
+  width: 100%;
+  max-width: 720px;
+  align-self: flex-start;
+}
+
+.exam-setup,
+.exam-run,
+.exam-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.exam-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.exam-field > span {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3a475a;
+  letter-spacing: 0;
+}
+
+.exam-select,
+.exam-input {
+  min-height: 38px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--color-workflow-border, #dce2ea);
+  background: #fff;
+  color: #18202d;
+  font-size: 14px;
+}
+
+.exam-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.exam-node-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.exam-node-title {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.exam-node-count {
+  font-size: 12px;
+  color: #5f6f84;
+  white-space: nowrap;
+}
+
+.exam-question {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid var(--color-workflow-border, #dce2ea);
+  background: #fafbfd;
+}
+
+.exam-question-tags {
+  display: flex;
+  gap: 8px;
+}
+
+.exam-question-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  letter-spacing: 0;
+  color: #18202d;
+  white-space: pre-wrap;
+}
+
+.exam-options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: #3a475a;
+}
+
+.exam-feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--color-workflow-border, #dce2ea);
+  background: #f7f9fc;
+}
+
+.exam-explanation {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #3a475a;
+  white-space: pre-wrap;
+}
+
+.exam-summary-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.exam-summary-score {
+  font-size: 14px;
+  font-weight: 600;
+  color: #18202d;
+}
+
+.exam-summary-weak,
+.exam-summary-review {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #3a475a;
+}
+
+.exam-error {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #f0c2c2;
+  background: #fdf0f0;
+  color: var(--color-workflow-risk, #b91c1c);
+  font-size: 13px;
+}
+
+/* ── Review flow (Module 6/7) ────────────────────────────────────────────── */
+/* Grouped queue with fixed row sizing so toggling future reviews does not    */
+/* jitter the surrounding layout.                                             */
+.review-view {
+  display: flex;
+  justify-content: center;
+  min-height: calc(100vh - 140px);
+  padding: 24px;
+}
+
+.review-card {
+  width: 100%;
+  max-width: 720px;
+  align-self: flex-start;
+}
+
+.review-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.review-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #3a475a;
+}
+
+.review-empty {
+  margin: 12px 0;
+  font-size: 13px;
+  color: #5f6f84;
+}
+
+.review-group {
+  margin-top: 16px;
+}
+
+.review-group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.review-group-count {
+  font-size: 12px;
+  color: #5f6f84;
+}
+
+.review-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.review-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--color-workflow-border, #dce2ea);
+  background: #fff;
+}
+
+.review-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.review-item-title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: #18202d;
+}
+
+.review-item-meta {
+  font-size: 12px;
+  color: #5f6f84;
+}
+
+.review-item-start {
+  flex: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-workflow-action, #2563eb);
+  white-space: nowrap;
+}
+
+.review-error {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #f0c2c2;
+  background: #fdf0f0;
+  color: var(--color-workflow-risk, #b91c1c);
+  font-size: 13px;
+}
+
+/* ── Review Start (Module 7) ─────────────────────────────────────────────── */
+.review-back {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+.review-back a {
+  color: var(--color-workflow-action, #2563eb);
+  font-weight: 600;
+}
+
+.review-context,
+.review-run,
+.review-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.review-node-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.review-node-title {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.review-node-meta {
+  font-size: 12px;
+  color: #5f6f84;
+  white-space: nowrap;
+}
+
+.review-section h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #3a475a;
+}
+
+.review-muted {
+  margin: 0;
+  font-size: 13px;
+  color: #5f6f84;
+}
+
+.review-errors {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.review-error-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--color-workflow-border, #dce2ea);
+  background: #fafbfd;
+}
+
+.review-error-q {
+  font-size: 13px;
+  font-weight: 600;
+  color: #18202d;
+}
+
+.review-error-exp {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #5f6f84;
+}
+
+.review-mnemonic-prompt {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #3a475a;
+}
+
+.review-mnemonic-display {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #f4f1fb;
+  border: 1px solid #e0d8f5;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.review-question {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid var(--color-workflow-border, #dce2ea);
+  background: #fafbfd;
+}
+
+.review-question-tags {
+  display: flex;
+  gap: 8px;
+}
+
+.review-question-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  letter-spacing: 0;
+  color: #18202d;
+  white-space: pre-wrap;
+}
+
+.review-options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: #3a475a;
+}
+
+.review-feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--color-workflow-border, #dce2ea);
+  background: #f7f9fc;
+}
+
+.review-summary-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.review-summary-score {
+  font-size: 14px;
+  font-weight: 600;
+  color: #18202d;
+}
+
+.review-actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* ── Host health badge ───────────────────────────────────────────────────── */
+/* Surfaces the /api/health action in the shell nav. Pushed to the far right.  */
+.host-health {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #5f6f84;
+  white-space: nowrap;
+}
+
+.host-health-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #c2cad6;
+}
+
+.host-health-online .host-health-dot {
+  background: var(--color-workflow-mastery, #16a34a);
+}
+
+.host-health-offline {
+  color: var(--color-workflow-risk, #b91c1c);
+}
+
+.host-health-offline .host-health-dot {
+  background: var(--color-workflow-risk, #b91c1c);
+}
+
+/* ----------------------------------------------------------------------- */
+/* Agent hand-off panel (data plane → tool)                                */
+/* ----------------------------------------------------------------------- */
+
+.handoff-panel {
+  margin: 0 0 14px;
+  border: 1px solid var(--color-workflow-border, #dce2ea);
+  background: #f8fafc;
+}
+
+.handoff-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.handoff-hint {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #475569;
+}
+
+.handoff-command {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #0f172a;
+}
+
+.handoff-command code {
+  flex: 1 1 auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  color: #e2e8f0;
+  word-break: break-all;
+}
+
+.handoff-return {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.handoff-return a {
+  color: var(--color-workflow-action, #2563eb);
+}
+
+.exam-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #64748b;
+}

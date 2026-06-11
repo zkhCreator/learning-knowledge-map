@@ -19,7 +19,7 @@ def _make_chain(make_node, make_edge, n=3):
         node[0] (depth=1) → node[1] (depth=2) → node[2] (depth=3)
     Returns list of nodes ordered shallowest to deepest.
     """
-    from src.db import database as db
+    from src.data import database as db
     goal = db.create_goal("Chain Goal")
     nodes = [
         make_node(title=f"Node{i}", goal_id=goal["id"], depth_level=i + 1)
@@ -38,7 +38,7 @@ def _make_tree(make_node, make_edge):
                       → mid_b(depth=2) → leaf_b(depth=3)
     Returns (root, mid_a, mid_b, leaf_a, leaf_b), goal
     """
-    from src.db import database as db
+    from src.data import database as db
     goal = db.create_goal("Tree Goal")
     root  = make_node(title="Root",   goal_id=goal["id"], depth_level=1)
     mid_a = make_node(title="Mid A",  goal_id=goal["id"], depth_level=2)
@@ -57,7 +57,7 @@ def _make_tree(make_node, make_edge):
 
 @pytest.fixture
 def make_edge(tmp_db):
-    from src.db import database as db
+    from src.data import database as db
     def _factory(from_node: str, to_node: str, edge_type: str = "prerequisite"):
         return db.create_edge(from_node=from_node, to_node=to_node, edge_type=edge_type)
     return _factory
@@ -67,7 +67,7 @@ def make_edge(tmp_db):
 
 class TestNextProbeNode:
     def test_empty_goal_returns_none(self, tmp_db):
-        from src.db import database as db
+        from src.data import database as db
         goal = db.create_goal("Empty Goal")
         from src.agents.assessor import next_probe_node
         result = next_probe_node(goal["id"], history=[], self_report=3)
@@ -153,7 +153,7 @@ class TestNextProbeNode:
 
     def test_prefers_standard_over_familiarity(self, tmp_db, make_node, make_edge):
         """When two nodes are at the same depth, prefer non-familiarity ones."""
-        from src.db import database as db
+        from src.data import database as db
         goal = db.create_goal("Pref Goal")
         fam  = make_node(title="Familiarity Node", goal_id=goal["id"],
                          depth_level=2, strictness_level="familiarity")
@@ -166,8 +166,8 @@ class TestNextProbeNode:
 
     def test_max_probes_cap(self, tmp_db, make_node, make_edge):
         """Should return None once MAX_PROBES history items are reached."""
-        from src.db import database as db
-        from src import config
+        from src.data import database as db
+        from src.infrastructure import config
         goal = db.create_goal("Big Goal")
         nodes = [
             make_node(title=f"N{i}", goal_id=goal["id"], depth_level=i + 1)
@@ -186,7 +186,7 @@ class TestNextProbeNode:
 
 class TestPropagatemastery:
     def test_single_node_marked_mastered(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.assessor import _propagate_mastery
         node = make_node()
         _propagate_mastery(node["id"], user_id="default", inferred_score=0.85)
@@ -196,7 +196,7 @@ class TestPropagatemastery:
 
     def test_prerequisites_marked_mastered_transitively(self, tmp_db, make_node, make_edge):
         nodes, goal = _make_chain(make_node, make_edge, n=3)
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.assessor import _propagate_mastery
         # Pass the deepest node — all prerequisites should also be mastered
         _propagate_mastery(nodes[2]["id"], user_id="default", inferred_score=0.85)
@@ -206,7 +206,7 @@ class TestPropagatemastery:
 
     def test_does_not_mark_dependents(self, tmp_db, make_node, make_edge):
         nodes, goal = _make_chain(make_node, make_edge, n=3)
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.assessor import _propagate_mastery
         # Pass the middle node — deepest should NOT be marked
         _propagate_mastery(nodes[1]["id"], user_id="default", inferred_score=0.85)
@@ -215,7 +215,7 @@ class TestPropagatemastery:
         assert not deep_state or deep_state.get("status") != "mastered"
 
     def test_no_prereqs_just_marks_node(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.assessor import _propagate_mastery
         node = make_node()
         _propagate_mastery(node["id"], user_id="default", inferred_score=0.82)
@@ -224,7 +224,7 @@ class TestPropagatemastery:
 
     def test_diamond_prereqs_no_double_mark(self, tmp_db, make_node, make_edge):
         """Diamond: A→B, A→C, B→D, C→D — passing D should mark all."""
-        from src.db import database as db
+        from src.data import database as db
         goal = db.create_goal("Diamond")
         a = make_node(title="A", goal_id=goal["id"], depth_level=1)
         b = make_node(title="B", goal_id=goal["id"], depth_level=2)
@@ -245,7 +245,7 @@ class TestPropagatemastery:
 
 class TestPropagateUnknown:
     def test_single_node_marked_unknown(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.assessor import _propagate_unknown
         node = make_node()
         _propagate_unknown(node["id"], user_id="default")
@@ -254,7 +254,7 @@ class TestPropagateUnknown:
 
     def test_dependents_marked_unknown_transitively(self, tmp_db, make_node, make_edge):
         nodes, goal = _make_chain(make_node, make_edge, n=3)
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.assessor import _propagate_unknown
         # Fail the shallowest node — all dependents should also be unknown
         _propagate_unknown(nodes[0]["id"], user_id="default")
@@ -264,7 +264,7 @@ class TestPropagateUnknown:
 
     def test_does_not_mark_prerequisites(self, tmp_db, make_node, make_edge):
         nodes, goal = _make_chain(make_node, make_edge, n=3)
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.assessor import _propagate_mastery, _propagate_unknown
         # First mark all as mastered
         for n in nodes:
@@ -277,7 +277,7 @@ class TestPropagateUnknown:
     def test_branch_propagation(self, tmp_db, make_node, make_edge):
         """Failing mid_a should mark leaf_a unknown but NOT mid_b/leaf_b."""
         (root, mid_a, mid_b, leaf_a, leaf_b), goal = _make_tree(make_node, make_edge)
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.assessor import _propagate_unknown
         _propagate_unknown(mid_a["id"], user_id="default")
         assert db.get_state(leaf_a["id"], "default")["status"] == "unknown"
@@ -391,7 +391,7 @@ class TestRunAssessmentLoop:
     def test_empty_goal_returns_gracefully(self, mock_gen, mock_score,
                                            tmp_db, monkeypatch):
         """No nodes → should return immediately without crashing."""
-        from src.db import database as db
+        from src.data import database as db
         goal = db.create_goal("Empty")
         self._mock_inputs(monkeypatch, ["3"])
 

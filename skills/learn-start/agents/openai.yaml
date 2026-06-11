@@ -1,0 +1,4 @@
+interface:
+  display_name: "Learn Start"
+  short_description: "Run a Socratic learning session for a knowledge node"
+  default_prompt: "Run a per-node Socratic learning session in the workflow host: generate or reuse the node's outline, create or resume the learning session, take the user's messages one turn at a time, track covered sections and progress, and only surface an Exam entry at readiness without auto-starting the exam."

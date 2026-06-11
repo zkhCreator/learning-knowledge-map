@@ -29,7 +29,7 @@ def _now_str() -> str:
 def _make_review(node_id: str, scheduled_at: str, review_round: int = 1,
                  user_id: str = "default") -> dict:
     """Create a pending review entry in the DB and return it."""
-    from src.db import database as db
+    from src.data import database as db
     return db.create_review(
         node_id=node_id,
         scheduled_at=scheduled_at,
@@ -55,7 +55,7 @@ class TestGetReviewQueue:
 
     def test_completed_reviews_excluded(self, tmp_db, make_node):
         from src.agents.reviewer import get_review_queue
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         rev = _make_review(node["id"], scheduled_at=_past(1))
         db.complete_review(rev["id"], score=0.9, next_interval_days=7)
@@ -150,7 +150,7 @@ class TestRunReviewLoop:
     def test_pass_completes_review_and_returns_summary(self, mock_exam, tmp_db, make_node):
         mock_exam.return_value = self._exam_summary(passed=True, score=0.9)
         from src.agents.reviewer import run_review_loop
-        from src.db import database as db
+        from src.data import database as db
 
         node = make_node()
         rev = _make_review(node["id"], scheduled_at=_past(1))
@@ -173,7 +173,7 @@ class TestRunReviewLoop:
     def test_fail_completes_review_and_reschedules(self, mock_exam, tmp_db, make_node):
         mock_exam.return_value = self._exam_summary(passed=False, score=0.3)
         from src.agents.reviewer import run_review_loop
-        from src.db import database as db
+        from src.data import database as db
 
         node = make_node()
         rev = _make_review(node["id"], scheduled_at=_past(1))
@@ -239,7 +239,7 @@ class TestRunReviewLoop:
     def test_stability_grows_after_pass(self, mock_exam, tmp_db, make_node):
         mock_exam.return_value = self._exam_summary(passed=True, score=0.9)
         from src.agents.reviewer import run_review_loop
-        from src.db import database as db
+        from src.data import database as db
         from datetime import datetime, timezone
 
         node = make_node()
@@ -288,7 +288,7 @@ class TestRunReviewLoop:
         """
         mock_exam.return_value = self._exam_summary(passed=True, score=0.9)
         from src.agents.reviewer import run_review_loop
-        from src.db import database as db
+        from src.data import database as db
 
         node = make_node()
         _make_review(node["id"], scheduled_at=_past(1))
@@ -311,7 +311,7 @@ class TestRunReviewLoop:
         """When a failed review creates the next entry, round is incremented."""
         mock_exam.return_value = self._exam_summary(passed=False, score=0.2)
         from src.agents.reviewer import run_review_loop
-        from src.db import database as db
+        from src.data import database as db
 
         node = make_node()
         _make_review(node["id"], scheduled_at=_past(1), review_round=2)
