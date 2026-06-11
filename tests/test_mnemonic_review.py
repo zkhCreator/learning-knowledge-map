@@ -19,7 +19,7 @@ from unittest.mock import patch, MagicMock
 
 class TestBuildRetrievalPrompt:
     def test_spatial_retrieval_prompt(self, make_node):
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.mnemonic import build_retrieval_prompt
 
         node = make_node(title="WAL 日志")
@@ -44,7 +44,7 @@ class TestBuildRetrievalPrompt:
         assert "回忆" in prompt or "场景" in prompt
 
     def test_symbolic_retrieval_prompt(self, make_node):
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.mnemonic import build_retrieval_prompt
 
         node = make_node(title="WAL 日志")
@@ -61,7 +61,7 @@ class TestBuildRetrievalPrompt:
         assert "先写日志" in prompt
 
     def test_narrative_retrieval_prompt(self, make_node):
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.mnemonic import build_retrieval_prompt
 
         node = make_node(title="WAL 日志")
@@ -87,7 +87,7 @@ class TestBuildRetrievalPrompt:
 
 class TestFormatRetrievalDisplay:
     def test_spatial_display_includes_locations(self, make_node):
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.mnemonic import format_retrieval_display
 
         node = make_node()
@@ -103,7 +103,7 @@ class TestFormatRetrievalDisplay:
         assert "银行大楼入口" in display
 
     def test_symbolic_display(self, make_node):
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.mnemonic import format_retrieval_display
 
         node = make_node()
@@ -131,7 +131,7 @@ class TestReviewerMnemonicIntegration:
 
     def _setup_review_scenario(self, make_node, make_goal):
         """Create a node with a pending review and mnemonic anchors."""
-        from src.db import database as db
+        from src.data import database as db
         from datetime import datetime, timezone, timedelta
 
         goal = make_goal(title="Test Goal")
@@ -170,7 +170,7 @@ class TestReviewerMnemonicIntegration:
 
     def test_get_mnemonic_retrieval_context_with_anchors(self, make_node):
         """Test the helper function that assembles retrieval context."""
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.mnemonic import get_retrieval_context
 
         node = make_node()
@@ -204,7 +204,7 @@ class TestReviewerMnemonicIntegration:
 
     def test_get_mnemonic_retrieval_context_no_anchors(self, make_node):
         """With a profile but no anchors, retrieval context should be None."""
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.mnemonic import get_retrieval_context
 
         node = make_node()

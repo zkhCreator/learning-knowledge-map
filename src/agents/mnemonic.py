@@ -280,7 +280,7 @@ def get_retrieval_context(
             "prompt": str,      # retrieval practice prompt
         }
     """
-    from src.db import database as db
+    from src.data import database as db
 
     profile = db.get_cognitive_profile(user_id)
     if not profile or not profile.get("assessed"):

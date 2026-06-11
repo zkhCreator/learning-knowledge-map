@@ -118,7 +118,7 @@ class TestChatTurnWithMnemonic:
 
     @patch("src.agents.teacher.llm.call_json")
     def test_chat_turn_with_mnemonic_sections(self, mock_call_json, make_node):
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.teacher import chat_turn
 
         node = make_node(title="WAL 日志")
@@ -170,7 +170,7 @@ class TestChatTurnWithMnemonic:
 
     @patch("src.agents.teacher.llm.call_json")
     def test_chat_turn_without_mnemonic(self, mock_call_json, make_node):
-        from src.db import database as db
+        from src.data import database as db
         from src.agents.teacher import chat_turn
 
         node = make_node(title="基础概念")

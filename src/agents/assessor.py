@@ -42,9 +42,9 @@ Outputs:
 
 from typing import Optional
 
-from src.agents import client as llm
-from src.db import database as db
-from src.logger import get_logger
+from src.infrastructure import llm
+from src.data import database as db
+from src.infrastructure.logger import get_logger
 
 log = get_logger(__name__)
 

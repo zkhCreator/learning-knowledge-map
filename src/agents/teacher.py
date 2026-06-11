@@ -39,11 +39,11 @@ Outputs:
 import json
 from typing import Callable, Optional
 
-from src import config
-from src.agents import client as llm
+from src.infrastructure import config
+from src.infrastructure import llm
 from src.agents.mnemonic import build_mnemonic_prompt_snippet, get_dominant_strategy
-from src.db import database as db
-from src.logger import get_logger
+from src.data import database as db
+from src.infrastructure.logger import get_logger
 
 log = get_logger(__name__)
 
