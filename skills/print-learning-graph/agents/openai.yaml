@@ -1,0 +1,4 @@
+interface:
+  display_name: "Print Learning Graph"
+  short_description: "Print a SQLite learning graph as a parent-child tree"
+  default_prompt: "Print the learning graph from the SQLite DB as a parent-child tree. Resolve the goal by ID or prefix, use the default user unless specified, and do not modify the database."

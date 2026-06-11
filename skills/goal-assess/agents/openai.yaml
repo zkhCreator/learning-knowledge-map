@@ -1,0 +1,4 @@
+interface:
+  display_name: "Goal Assess"
+  short_description: "Run an initial knowledge assessment that skips already-known content"
+  default_prompt: "Run the initial assessment for the given learning goal in the workflow host: probe a few adaptive questions, score the user's answers, write user_knowledge_state, and present a summary with a recommended start node without auto-starting learning."

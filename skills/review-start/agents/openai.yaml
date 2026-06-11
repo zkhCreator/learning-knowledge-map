@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Start"
+  short_description: "Run one Ebbinghaus review for a knowledge node"
+  default_prompt: "Execute one spaced-repetition review in the workflow host: assemble the review context (past errors + mnemonic cues), run a re-exam by reusing the exam flow, then complete the current review and schedule the next one — rescheduling on failure. Keep the entry, context, and completion independent from a normal exam."

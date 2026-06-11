@@ -1,0 +1,4 @@
+interface:
+  display_name: "Decompose Learning Goal"
+  short_description: "Decompose, review, and persist learning goals as DAGs"
+  default_prompt: "Decompose this learning goal into atomic knowledge nodes with dependencies, use available subagent review when possible, return readable notes and JSON, then persist the final JSON to SQLite with the bundled script."
