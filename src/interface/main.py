@@ -1,39 +1,42 @@
 """
-File: cli/main.py
+File: src/interface/main.py
 
 Purpose:
-    Entry point for the learning system CLI.
-    All user-facing commands live here.
+    Entry point for the learning system CLI — a pure DATA PLANE (doc 19).
+    The CLI never calls an LLM: it initialises, inspects, and manages already
+    generated data. Every generation step (decompose / assess / learn / exam /
+    review) is handed off to its skill in Claude Code / Codex.
 
 Responsibilities:
     - Parse commands and flags
-    - Display progress and results in a readable format
-    - Delegate logic to agents/, db/, graph/ modules
+    - Display already-generated data (graph, status, progress, results)
+    - Delegate data access to data/ and domain/ modules
 
-Available commands:
+Available commands (all data-plane, no LLM):
     init                        Initialise the database
-    goal new <title>            Create a new learning goal and decompose it
     goal list                   List all goals
     goal remove <id>            Remove a goal and all related learning data
     goal export <id>            Export a goal graph to a draw.io diagram
     goal tree <id>              Show the knowledge graph for a goal
     goal nodes <id>             List atomic nodes in learning order
-    goal assess <id>            Run initial knowledge assessment (skip known nodes)
     status                      Show today's learning status (due reviews + next node)
-    learn start <node-id>       Generate outline and enter Socratic dialogue
-    learn chat <node-id>        Resume an in-progress Socratic dialogue
     learn progress <node-id>    Show outline coverage progress for a node
-    exam start <node-id>        Start an exam for a node
     exam review <exam-id>       Show exam result details
     errors list                 View error notebook entries
-    errors review <node-id>     Redo historical errors for a node
     review list                 Show the Ebbinghaus review queue (priority sorted)
-    review start                Start the highest-priority pending review
-    review start <node-id>      Start a review for a specific node
+
+Moved to skills (generation; not reachable from the CLI anymore — see doc 19):
+    goal new        → /decompose-learning-goal
+    goal assess     → /goal-assess
+    learn start     → /learn-start
+    learn chat      → /learn-start (resume)
+    exam start      → /exam-start generate
+    errors review   → /review-start
+    review start    → /review-start
 
 What this file does NOT do:
     - Business logic
-    - Agent calls directly (routes through agents/ modules)
+    - Any LLM / agent call (generation lives in skills/)
 """
 
 import typer
@@ -59,8 +62,8 @@ def _setup_logging(verbose: bool = False):
     """Initialise logging. Call at the start of every command that does real work."""
     global _verbose
     _verbose = verbose
-    from src.logger import setup as log_setup
-    from src import config
+    from src.infrastructure.logger import setup as log_setup
+    from src.infrastructure import config
     log_setup(verbose=verbose)
     if verbose:
         console.print(
@@ -68,7 +71,7 @@ def _setup_logging(verbose: bool = False):
             f"[dim]   (or run: tail -f {config.DB_PATH.parent}/learning.log)[/dim]\n"
         )
     else:
-        from src import config
+        from src.infrastructure import config
         console.print(
             f"[dim]📋 Logs → {config.DB_PATH.parent}/learning.log  "
             f"(add --verbose to also print here)[/dim]\n"
@@ -82,10 +85,10 @@ def init(
     verbose: bool = typer.Option(False, "--verbose", "-v", help="同时将 DEBUG 日志打印到终端"),
 ):
     """Initialise the SQLite database. Safe to run multiple times."""
-    from src import config
+    from src.infrastructure import config
     config.validate()
     _setup_logging(verbose)
-    from src.db import database as db
+    from src.data import database as db
     db.init_db()
     rprint(f"[green]✓[/green] 数据库初始化完成：{config.DB_PATH}")
 
@@ -96,97 +99,14 @@ goal_app = typer.Typer(help="管理学习目标", no_args_is_help=True)
 app.add_typer(goal_app, name="goal")
 
 
-@goal_app.command("new")
-def goal_new(
-    title: str = typer.Argument(..., help="学习目标，例如 '学会 Kubernetes 集群管理'"),
-    domains: Optional[str] = typer.Option(
-        None, "--domains", "-d",
-        help="用户已知领域（逗号分隔），例如 'Linux,Python,数据库'"
-    ),
-    user_id: str = typer.Option("default", "--user", "-u", help="用户 ID"),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="同时将 DEBUG 日志打印到终端"),
-):
-    """
-    创建新的学习目标，并自动用双 Agent 递归拆解为知识图谱。
-    """
-    from src import config
-    config.validate()
-    _setup_logging(verbose)
-    from src.db import database as db
-    from src.agents import decomposer
-
-    db.init_db()
-
-    user_domains = [d.strip() for d in domains.split(",")] if domains else []
-
-    console.rule(f"[bold blue]新建学习目标[/bold blue]")
-    console.print(f"目标：[bold]{title}[/bold]")
-    if user_domains:
-        console.print(f"已知领域：{', '.join(user_domains)}")
-    console.print()
-
-    goal = db.create_goal(title=title, user_id=user_id)
-    console.print(f"[dim]Goal ID: {goal['id']}[/dim]")
-    console.rule("[yellow]开始拆解[/yellow]")
-
-    try:
-        atomic_nodes = decomposer.decompose_goal(
-            goal_id=goal["id"],
-            root_title=title,
-            user_domains=user_domains,
-            progress_cb=lambda msg: console.print(msg),
-        )
-    except Exception as e:
-        console.print(f"[red]拆解失败：{e}[/red]")
-        raise typer.Exit(1)
-
-    console.rule("[green]拆解结果[/green]")
-
-    table = Table(show_header=True, header_style="bold cyan")
-    table.add_column("序号", style="dim", width=4)
-    table.add_column("知识点", min_width=20)
-    table.add_column("领域", width=12)
-    table.add_column("难度", width=4)
-    table.add_column("时间", width=6)
-    table.add_column("严格度", width=8)
-
-    for i, node in enumerate(atomic_nodes, 1):
-        strictness_color = {
-            "critical": "red",
-            "standard": "yellow",
-            "familiarity": "green",
-        }.get(node.get("strictness_level", "standard"), "white")
-        table.add_row(
-            str(i),
-            node["title"],
-            node.get("domain", "—"),
-            "★" * node.get("difficulty", 3),
-            f"{node.get('est_minutes', '?')} min",
-            f"[{strictness_color}]{node.get('strictness_level', 'standard')}[/{strictness_color}]",
-        )
-
-    console.print(table)
-    console.print(
-        f"\n[green]✓[/green] 共 {len(atomic_nodes)} 个原子知识点，"
-        f"预计总学习时间 {sum(n.get('est_minutes', 0) for n in atomic_nodes)} 分钟"
-    )
-    console.print(
-        f"\n使用 [bold]python main.py goal tree {goal['id'][:8]}[/bold] 查看完整知识图谱"
-    )
-    console.print(
-        f"\n[bold cyan]💡 建议：[/bold cyan]运行初始评估，跳过你已掌握的内容：\n"
-        f"   [bold]python main.py goal assess {goal['id'][:8]}[/bold]"
-    )
-
-
 @goal_app.command("list")
 def goal_list(user_id: str = typer.Option("default", "--user", "-u")):
     """列出所有学习目标。"""
-    from src.db import database as db
+    from src.data import database as db
     goals = db.list_goals(user_id=user_id)
 
     if not goals:
-        rprint("[yellow]暂无学习目标。使用 python main.py goal new '...' 创建一个。[/yellow]")
+        rprint("[yellow]暂无学习目标。在 Claude Code / Codex 中运行 /decompose-learning-goal '...' 创建一个。[/yellow]")
         return
 
     table = Table(show_header=True, header_style="bold cyan")
@@ -218,7 +138,7 @@ def goal_remove(
     yes: bool = typer.Option(False, "--yes", "-y", help="不询问，直接删除"),
 ):
     """删除目标及其关联的知识图谱、学习状态和复习计划。"""
-    from src.db import database as db
+    from src.data import database as db
 
     goal = _resolve_goal(goal_id_prefix, user_id=user_id)
     if not goal:
@@ -260,7 +180,7 @@ def goal_export(
     atomic_only: bool = typer.Option(False, "--atomic-only", help="只导出原子知识点"),
 ):
     """导出为 draw.io / diagrams.net 可直接打开的节点图。"""
-    from src.graph import drawio
+    from src.domain import drawio
 
     goal = _resolve_goal(goal_id_prefix, user_id=user_id)
     if not goal:
@@ -292,7 +212,7 @@ def goal_tree(
     user_id: str = typer.Option("default", "--user", "-u"),
 ):
     """以树状图展示目标的知识图谱结构。"""
-    from src.graph import dag
+    from src.domain import dag
 
     goal = _resolve_goal(goal_id_prefix, user_id=user_id)
     if not goal:
@@ -308,8 +228,8 @@ def goal_nodes(
     user_id: str = typer.Option("default", "--user", "-u"),
 ):
     """按学习顺序列出原子知识点（拓扑排序）。"""
-    from src.db import database as db
-    from src.graph import dag
+    from src.data import database as db
+    from src.domain import dag
 
     goal = _resolve_goal(goal_id_prefix, user_id=user_id)
     if not goal:
@@ -317,7 +237,7 @@ def goal_nodes(
 
     nodes = dag.topological_order(goal["id"])
     if not nodes:
-        rprint("[yellow]暂无知识点，请先运行 python main.py goal new 创建目标。[/yellow]")
+        rprint("[yellow]暂无知识点，请先用 /decompose-learning-goal 拆解目标。[/yellow]")
         return
 
     table = Table(show_header=True, header_style="bold cyan")
@@ -369,53 +289,6 @@ def goal_nodes(
     console.print(f"\n共 {len(nodes)} 个知识点，预计总时间 {total_min} 分钟")
 
 
-@goal_app.command("assess")
-def goal_assess(
-    goal_id_prefix: str = typer.Argument(..., help="Goal ID 或前8位"),
-    user_id: str = typer.Option("default", "--user", "-u"),
-    model: Optional[str] = typer.Option(None, "--model", "-m"),
-    verbose: bool = typer.Option(False, "--verbose", "-v"),
-):
-    """
-    对学习目标进行初始知识评估。
-
-    系统会用 8-10 道自适应探测题判断你的已知范围，
-    然后批量标记已掌握节点，学习路径将自动跳过这些内容。
-    """
-    from src import config as cfg
-    cfg.validate(model)
-    _setup_logging(verbose)
-    from src.db import database as db
-    from src.agents.assessor import run_assessment_loop
-
-    db.init_db()
-    goal = _resolve_goal(goal_id_prefix, user_id=user_id)
-    if not goal:
-        return
-
-    used_model = model or cfg.DEFAULT_MODEL
-    result = run_assessment_loop(
-        goal_id=goal["id"],
-        user_id=user_id,
-        model=used_model,
-        console=console,
-    )
-
-    if result.get("total_nodes", 0) > 0:
-        mastered = result["mastered"]
-        total = result["total_nodes"]
-        if mastered == total:
-            console.print(
-                "[green]🎉 你已掌握全部知识点！"
-                "可直接运行 review start 进行复习验证。[/green]"
-            )
-        elif mastered == 0:
-            console.print(
-                "[yellow]检测到你从零开始学习这个领域，"
-                "系统已为你规划完整的学习路径。[/yellow]"
-            )
-
-
 # ── status ─────────────────────────────────────────────────────────────────────
 
 @app.command()
@@ -425,7 +298,7 @@ def status(
 ):
     """显示今日学习状态：待复习节点 + 下一个待学节点。"""
     _setup_logging(verbose)
-    from src.db import database as db
+    from src.data import database as db
 
     console.rule("[bold blue]今日学习状态[/bold blue]")
 
@@ -437,12 +310,12 @@ def status(
             console.print(f"   • {r['node_title']}  [{r.get('strictness_level','standard')}]")
         if len(due) > 5:
             console.print(f"   ... 还有 {len(due)-5} 个")
-        console.print(f"\n   [dim]使用 python main.py review start 开始最紧急的复习[/dim]")
+        console.print(f"\n   [dim]在 Claude Code / Codex 中运行 /review-start 开始最紧急的复习[/dim]")
     else:
         console.print("\n[green]✓ 今日无待复习任务[/green]")
 
     # Next recommended node to learn
-    from src.graph import dag as dag_module
+    from src.domain import dag as dag_module
     goals = db.list_goals(user_id=user_id)
     next_node = None
     for g in goals:
@@ -462,7 +335,7 @@ def status(
             f"  [dim]({next_node['id'][:8]})[/dim]"
         )
         console.print(
-            f"   [dim]使用 python main.py learn start {next_node['id'][:8]} 开始学习[/dim]"
+            f"   [dim]运行 /learn-start {next_node['id'][:8]} 开始学习（Claude Code / Codex）[/dim]"
         )
 
     # Goals summary
@@ -482,7 +355,7 @@ def status(
             )
     else:
         console.print(
-            "\n[yellow]尚无学习目标。使用 python main.py goal new '...' 开始。[/yellow]"
+            "\n[yellow]尚无学习目标。在 Claude Code / Codex 中运行 /decompose-learning-goal '...' 开始。[/yellow]"
         )
 
 
@@ -490,7 +363,7 @@ def status(
 
 def _resolve_goal(goal_id_prefix: str, user_id: str = "default") -> Optional[dict]:
     """Find a goal by full ID or prefix for the selected user."""
-    from src.db import database as db
+    from src.data import database as db
     goals = db.list_goals(user_id=user_id)
     matches = [g for g in goals if g["id"].startswith(goal_id_prefix)]
     if not matches:
@@ -508,95 +381,13 @@ learn_app = typer.Typer(help="节点级学习（大纲 + 苏格拉底对话）",
 app.add_typer(learn_app, name="learn")
 
 
-@learn_app.command("start")
-def learn_start(
-    node_id_prefix: str = typer.Argument(..., help="Node ID 或前8位"),
-    user_id: str = typer.Option("default", "--user", "-u"),
-    model: Optional[str] = typer.Option(None, "--model", "-m", help="覆盖默认模型"),
-    domains: Optional[str] = typer.Option(
-        None, "--domains", "-d",
-        help="用户已知领域（逗号分隔），用于类比桥接"
-    ),
-    verbose: bool = typer.Option(False, "--verbose", "-v"),
-):
-    """
-    为知识节点生成大纲，然后进入苏格拉底式对话学习。
-    学习进度 ≥ 90% 时可输入 /exam 直接进入考试。
-    """
-    from src import config as cfg
-    cfg.validate(model)
-    _setup_logging(verbose)
-    from src.db import database as db
-    from src.agents import teacher
-
-    db.init_db()
-    node = _resolve_node(node_id_prefix, user_id=user_id)
-    if not node:
-        return
-
-    user_domains = [d.strip() for d in domains.split(",")] if domains else []
-    used_model = model or cfg.DEFAULT_MODEL
-
-    console.rule(f"[bold blue]开始学习[/bold blue]")
-    console.print(f"节点：[bold]{node['title']}[/bold]  [dim]({node_id_prefix})[/dim]")
-    console.print(f"模型：[dim]{used_model}[/dim]")
-    console.print()
-
-    proceed_to_exam = teacher.run_chat_loop(
-        node_id=node["id"],
-        user_id=user_id,
-        model=used_model,
-        console=console,
-        user_domains=user_domains,
-    )
-
-    if proceed_to_exam:
-        console.print()
-        if typer.confirm("现在立即进入考试？"):
-            from src.agents import examiner
-            examiner.run_exam_loop(
-                node_id=node["id"],
-                user_id=user_id,
-                model=used_model,
-                console=console,
-            )
-
-
-@learn_app.command("chat")
-def learn_chat(
-    node_id_prefix: str = typer.Argument(..., help="Node ID 或前8位"),
-    user_id: str = typer.Option("default", "--user", "-u"),
-    model: Optional[str] = typer.Option(None, "--model", "-m"),
-    verbose: bool = typer.Option(False, "--verbose", "-v"),
-):
-    """继续未完成的苏格拉底对话（已有 session 则恢复，没有则开始新对话）。"""
-    from src import config as cfg
-    cfg.validate(model)
-    _setup_logging(verbose)
-    from src.db import database as db
-    from src.agents import teacher
-
-    db.init_db()
-    node = _resolve_node(node_id_prefix, user_id=user_id)
-    if not node:
-        return
-
-    used_model = model or cfg.DEFAULT_MODEL
-    teacher.run_chat_loop(
-        node_id=node["id"],
-        user_id=user_id,
-        model=used_model,
-        console=console,
-    )
-
-
 @learn_app.command("progress")
 def learn_progress(
     node_id_prefix: str = typer.Argument(..., help="Node ID 或前8位"),
     user_id: str = typer.Option("default", "--user", "-u"),
 ):
     """显示某节点的大纲学习进度（哪些章节已覆盖）。"""
-    from src.db import database as db
+    from src.data import database as db
 
     node = _resolve_node(node_id_prefix, user_id=user_id)
     if not node:
@@ -631,41 +422,13 @@ exam_app = typer.Typer(help="节点考试", no_args_is_help=True)
 app.add_typer(exam_app, name="exam")
 
 
-@exam_app.command("start")
-def exam_start(
-    node_id_prefix: str = typer.Argument(..., help="Node ID 或前8位"),
-    user_id: str = typer.Option("default", "--user", "-u"),
-    model: Optional[str] = typer.Option(None, "--model", "-m"),
-    verbose: bool = typer.Option(False, "--verbose", "-v"),
-):
-    """开始考试。可跳过学习直接进入，系统会自动生成大纲用于出题。"""
-    from src import config as cfg
-    cfg.validate(model)
-    _setup_logging(verbose)
-    from src.db import database as db
-    from src.agents import examiner
-
-    db.init_db()
-    node = _resolve_node(node_id_prefix, user_id=user_id)
-    if not node:
-        return
-
-    used_model = model or cfg.DEFAULT_MODEL
-    examiner.run_exam_loop(
-        node_id=node["id"],
-        user_id=user_id,
-        model=used_model,
-        console=console,
-    )
-
-
 @exam_app.command("review")
 def exam_review(
     exam_id_prefix: str = typer.Argument(..., help="Exam ID 或前8位"),
     user_id: str = typer.Option("default", "--user", "-u"),
 ):
     """查看某次考试的结果详情（题目、答案、得分）。"""
-    from src.db import database as db
+    from src.data import database as db
 
     # Resolve exam by prefix via questions table
     with db.get_connection() as conn:
@@ -727,7 +490,7 @@ def errors_list(
     limit: int = typer.Option(20, "--limit", "-l", help="显示条数"),
 ):
     """查看错题本。可按节点或错误类型过滤。"""
-    from src.db import database as db
+    from src.data import database as db
 
     node_id: Optional[str] = None
     if node_id_prefix:
@@ -763,89 +526,15 @@ def errors_list(
 
     console.print(table)
     console.print(
-        f"\n[dim]使用 python main.py errors review <node-id> 重做某节点的全部历史错题[/dim]"
+        f"\n[dim]在 Claude Code / Codex 中运行 /review-start <node-id> 重做某节点的历史错题[/dim]"
     )
-
-
-@errors_app.command("review")
-def errors_review(
-    node_id_prefix: str = typer.Argument(..., help="Node ID 或前8位"),
-    user_id: str = typer.Option("default", "--user", "-u"),
-    model: Optional[str] = typer.Option(None, "--model", "-m"),
-):
-    """重做某节点的历史错题（以对话形式复习）。"""
-    from src import config as cfg
-    cfg.validate(model)
-    from src.db import database as db
-
-    node = _resolve_node(node_id_prefix, user_id=user_id)
-    if not node:
-        return
-
-    errors = db.list_errors(user_id=user_id, node_id=node["id"])
-    if not errors:
-        rprint(f"[green]节点「{node['title']}」没有错题记录，继续保持！[/green]")
-        return
-
-    used_model = model or cfg.DEFAULT_MODEL
-    console.rule(f"[bold red]错题复习：{node['title']}[/bold red]")
-    console.print(f"共 {len(errors)} 道历史错题\n")
-
-    for i, err in enumerate(errors, 1):
-        from rich.panel import Panel
-        console.print(Panel(
-            f"[bold]第 {i}/{len(errors)} 题[/bold]  [{err.get('error_type', '?')}]\n\n"
-            f"{err['question']}\n\n"
-            f"[dim]上次你的回答：{err.get('user_answer', '（无记录）')[:200]}[/dim]",
-            border_style="red",
-        ))
-
-        try:
-            user_answer = input("你的回答：").strip()
-        except (KeyboardInterrupt, EOFError):
-            console.print("\n[yellow]已退出复习。[/yellow]")
-            break
-
-        if user_answer.lower() in ("/exit", "/quit"):
-            break
-
-        if not user_answer:
-            user_answer = "（未作答）"
-
-        from src.agents.examiner import score_answer
-        console.print("[dim]正在评分...[/dim]")
-        scoring = score_answer(
-            question=err["question"],
-            expected_answer=err["correct_answer"],
-            user_answer=user_answer,
-            strictness=node.get("strictness_level", "standard"),
-            model=used_model,
-        )
-
-        score_val = scoring["score"]
-        color = "green" if score_val >= 0.8 else ("yellow" if score_val >= 0.5 else "red")
-        console.print(f"[{color}]得分：{score_val:.0%}[/{color}]")
-        console.print(f"[dim]{scoring['explanation']}[/dim]")
-        if score_val < 0.8:
-            console.print(f"\n[dim]正确答案：{err['correct_answer'][:400]}[/dim]")
-
-        # Update review count
-        with db.get_connection() as conn:
-            from src.db.database import _now
-            conn.execute(
-                "UPDATE error_notebook SET review_count = review_count + 1, last_reviewed = ? WHERE id = ?",
-                (_now(), err["id"]),
-            )
-        console.print()
-
-    console.print("[green]错题复习完成。[/green]")
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
 def _resolve_node(node_id_prefix: str, user_id: str = "default") -> Optional[dict]:
     """Find a node by full ID or prefix."""
-    from src.db import database as db
+    from src.data import database as db
     with db.get_connection() as conn:
         rows = conn.execute(
             "SELECT * FROM knowledge_nodes WHERE id LIKE ? LIMIT 5",
@@ -877,7 +566,7 @@ def review_list(
 ):
     """显示复习队列（按优先级排序：critical > 逾期 > 今日）。"""
     from src.agents.reviewer import get_review_queue
-    from src.db import database as db
+    from src.data import database as db
 
     queue = get_review_queue(user_id=user_id)
     if not queue:
@@ -926,59 +615,8 @@ def review_list(
 
     console.print(table)
     console.print(
-        f"\n[dim]使用 python main.py review start 开始最高优先级复习[/dim]"
+        f"\n[dim]在 Claude Code / Codex 中运行 /review-start 开始最高优先级复习[/dim]"
     )
-
-
-@review_app.command("start")
-def review_start(
-    node_id_prefix: Optional[str] = typer.Argument(
-        None, help="Node ID 或前8位（省略则选最高优先级）"
-    ),
-    user_id: str = typer.Option("default", "--user", "-u"),
-    model: Optional[str] = typer.Option(None, "--model", "-m"),
-    verbose: bool = typer.Option(False, "--verbose", "-v"),
-):
-    """
-    开始 Ebbinghaus 复习。
-
-    省略 node-id 则自动选择优先级最高的待复习节点（critical > 逾期 > 今日）。
-    复习流程：显示历史错题 → 完整考试 → 更新稳定性 → 安排下次复习。
-    """
-    from src import config as cfg
-    cfg.validate(model)
-    _setup_logging(verbose)
-    from src.db import database as db
-    from src.agents.reviewer import run_review_loop
-
-    db.init_db()
-
-    node_id: Optional[str] = None
-    if node_id_prefix:
-        node = _resolve_node(node_id_prefix, user_id=user_id)
-        if not node:
-            return
-        node_id = node["id"]
-
-    used_model = model or cfg.DEFAULT_MODEL
-    result = run_review_loop(
-        node_id=node_id,
-        user_id=user_id,
-        model=used_model,
-        console=console,
-    )
-
-    if result:
-        passed = result.get("passed", False)
-        next_days = result.get("next_review_days")
-        if passed and next_days:
-            console.print(
-                f"\n[green]✓ 复习完成！下次复习安排在 {next_days} 天后。[/green]"
-            )
-        elif not passed:
-            console.print(
-                f"\n[yellow]本次复习未通过，已缩短复习间隔。继续加油！[/yellow]"
-            )
 
 
 if __name__ == "__main__":

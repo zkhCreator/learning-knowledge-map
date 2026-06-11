@@ -1,5 +1,5 @@
 """
-File: cli/entrypoints.py
+File: src/interface/entrypoints.py
 
 Purpose:
     Shared bootstrap helpers for the CLI entrypoints.
@@ -48,9 +48,9 @@ def _run(import_target: str, attr_name: str):
 
 def run_main():
     """Launch the full CLI app."""
-    _run("src.cli.main", "app")
+    _run("src.interface.main", "app")
 
 
 def run_goal():
     """Launch the goal-only compatibility entrypoint."""
-    _run("src.cli.main", "goal_app")
+    _run("src.interface.main", "goal_app")
