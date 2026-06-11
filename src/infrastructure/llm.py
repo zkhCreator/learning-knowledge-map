@@ -1,5 +1,5 @@
 """
-File: agents/client.py
+File: src/infrastructure/llm.py
 
 Purpose:
     Provider-aware wrapper around the Anthropic SDK and OpenAI-compatible
@@ -20,7 +20,7 @@ What this file does NOT do:
     - Provider-specific advanced features beyond plain text generation
 
 Inputs:
-    - Shared or provider-specific config from src.config
+    - Shared or provider-specific config from src.infrastructure.config
     - system prompt, user messages, max_tokens per call
 
 Outputs:
@@ -44,10 +44,23 @@ try:
 except ImportError:  # pragma: no cover - depends on runtime environment
     OpenAI = None
 
-from src import config
-from src.logger import get_logger
+from src.infrastructure import config
+from src.infrastructure.logger import get_logger
 
 log = get_logger(__name__)
+
+
+class AgentCapabilityUnavailable(RuntimeError):
+    """
+    Raised when LLM generation is requested while the process runs as the GUI
+    data plane (config.WEB_MODE). The local web host is intentionally LLM-free:
+    callers should hand the generation step back to Codex / Claude Code rather
+    than treat this as a transient API failure. Carries a stable `code` so the
+    workflow API can map it to an `agent_required` envelope.
+    """
+
+    code = "agent_required"
+
 
 # ── Singleton clients ──────────────────────────────────────────────────────────
 
@@ -121,6 +134,15 @@ def call(
     Returns:
         The model's text response as a string.
     """
+    if config.WEB_MODE:
+        # GUI data plane: refuse LLM work before importing/connecting any SDK,
+        # so the host hands generation back to Codex / Claude Code instead of
+        # surfacing a missing-package or missing-key error.
+        raise AgentCapabilityUnavailable(
+            "LLM generation is disabled in the local web host. Run the matching "
+            "skill in Codex or Claude Code to generate this content."
+        )
+
     used_model = model or config.DEFAULT_MODEL
     provider = config.provider_for(used_model)
     client = get_client(used_model)

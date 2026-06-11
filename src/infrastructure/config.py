@@ -1,5 +1,5 @@
 """
-File: config.py
+File: src/infrastructure/config.py
 
 Purpose:
     Centralised configuration loader for the learning system.
@@ -63,6 +63,20 @@ DEFAULT_MODEL: str = os.environ.get("DEFAULT_MODEL", "claude-sonnet-4-6")
 
 # Back-compat alias used internally (agents read this at call time)
 ANTHROPIC_MODEL: str = DEFAULT_MODEL  # kept for legacy references
+
+
+# ── Web data-plane mode ────────────────────────────────────────────────────────
+
+# When set (env LDG_WEB_MODE=1), the process is serving the local GUI as a pure
+# data plane: it may read/write SQLite but MUST NOT call the LLM. Any agent
+# capability request is refused at the client boundary so the GUI can hand the
+# generation step back to Codex / Claude Code instead of leaking a raw
+# "package not installed" / missing-key error. See docs/16-web-data-plane-handoff.
+def _env_truthy(value: str | None) -> bool:
+    return bool(value) and value.strip().lower() not in ("", "0", "false", "no", "off")
+
+
+WEB_MODE: bool = _env_truthy(os.environ.get("LDG_WEB_MODE"))
 
 
 # ── Database ───────────────────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 """
-File: logger.py
+File: src/infrastructure/logger.py
 
 Purpose:
     Centralised logging setup for the learning system.
@@ -20,7 +20,7 @@ import logging
 import sys
 from pathlib import Path
 
-from src import config
+from src.infrastructure import config
 
 _FORMATTER = logging.Formatter(
     fmt="%(asctime)s [%(levelname)-8s] %(name)s — %(message)s",
