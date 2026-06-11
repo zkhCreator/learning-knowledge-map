@@ -1,5 +1,5 @@
 """
-File: db/database.py
+File: src/data/database.py
 
 Purpose:
     SQLite database setup, schema creation, and all CRUD operations
@@ -27,7 +27,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from src import config
+from src.infrastructure import config
 
 
 # ── Connection ─────────────────────────────────────────────────────────────────
@@ -800,7 +800,9 @@ def add_exam_question(
     return q
 
 
-def answer_exam_question(question_id: str, user_answer: str, score: float):
+def answer_exam_question(question_id: str, user_answer: str, score: float | None = None):
+    # score may be None when the GUI data plane records a raw answer that the
+    # tool will score later; the column is nullable REAL.
     with get_connection() as conn:
         conn.execute(
             "UPDATE exam_questions SET user_answer=?, score=? WHERE id=?",

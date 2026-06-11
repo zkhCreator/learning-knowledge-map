@@ -1,7 +1,7 @@
 """
 tests/test_db.py
 
-Unit tests for src/db/database.py.
+Unit tests for src/data/database.py.
 Covers every CRUD helper across all tables.
 No mock needed — uses the tmp_db fixture (in-memory temp SQLite).
 """
@@ -15,7 +15,7 @@ from datetime import datetime, timedelta, timezone
 
 class TestGoals:
     def test_create_goal_returns_dict(self, tmp_db):
-        from src.db import database as db
+        from src.data import database as db
         goal = db.create_goal("Learn Python")
         assert goal["title"] == "Learn Python"
         assert goal["user_id"] == "default"
@@ -23,24 +23,24 @@ class TestGoals:
         assert "id" in goal
 
     def test_create_goal_custom_user(self, tmp_db):
-        from src.db import database as db
+        from src.data import database as db
         goal = db.create_goal("Goal", user_id="alice")
         assert goal["user_id"] == "alice"
 
     def test_get_goal_existing(self, tmp_db):
-        from src.db import database as db
+        from src.data import database as db
         created = db.create_goal("Learn Go")
         fetched = db.get_goal(created["id"])
         assert fetched["id"] == created["id"]
         assert fetched["title"] == "Learn Go"
 
     def test_get_goal_missing_returns_empty(self, tmp_db):
-        from src.db import database as db
+        from src.data import database as db
         result = db.get_goal("nonexistent-id")
         assert result == {}
 
     def test_list_goals_returns_all_for_user(self, tmp_db):
-        from src.db import database as db
+        from src.data import database as db
         db.create_goal("Goal A", user_id="bob")
         db.create_goal("Goal B", user_id="bob")
         db.create_goal("Goal C", user_id="alice")
@@ -50,32 +50,32 @@ class TestGoals:
         assert titles == {"Goal A", "Goal B"}
 
     def test_list_goals_empty(self, tmp_db):
-        from src.db import database as db
+        from src.data import database as db
         assert db.list_goals(user_id="nobody") == []
 
     def test_update_goal_status(self, tmp_db):
-        from src.db import database as db
+        from src.data import database as db
         goal = db.create_goal("Goal")
         db.update_goal(goal["id"], status="active")
         updated = db.get_goal(goal["id"])
         assert updated["status"] == "active"
 
     def test_update_goal_root_node(self, tmp_db):
-        from src.db import database as db
+        from src.data import database as db
         goal = db.create_goal("Goal")
         db.update_goal(goal["id"], root_node="some-node-id")
         updated = db.get_goal(goal["id"])
         assert updated["root_node"] == "some-node-id"
 
     def test_delete_goal_removes_goal(self, tmp_db):
-        from src.db import database as db
+        from src.data import database as db
         goal = db.create_goal("To Delete")
         deleted = db.delete_goal(goal["id"])
         assert deleted["goals"] == 1
         assert db.get_goal(goal["id"]) == {}
 
     def test_delete_goal_cascades_nodes_edges_states_reviews(self, tmp_db):
-        from src.db import database as db
+        from src.data import database as db
         goal = db.create_goal("Cascade Goal")
         n1 = db.create_node("N1", goal_id=goal["id"])
         n2 = db.create_node("N2", goal_id=goal["id"])
@@ -90,7 +90,7 @@ class TestGoals:
         assert deleted["reviews"] == 1
 
     def test_delete_goal_nonexistent_returns_zeros(self, tmp_db):
-        from src.db import database as db
+        from src.data import database as db
         deleted = db.delete_goal("no-such-id")
         assert deleted["goals"] == 0
 
@@ -99,7 +99,7 @@ class TestGoals:
 
 class TestNodes:
     def test_create_node_defaults(self, tmp_db, make_goal):
-        from src.db import database as db
+        from src.data import database as db
         goal = make_goal()
         node = db.create_node("Understand Pointers", goal_id=goal["id"])
         assert node["title"] == "Understand Pointers"
@@ -109,19 +109,19 @@ class TestNodes:
         assert node["concept_fingerprint"] == "[]"  # raw JSON string from create
 
     def test_create_node_critical_threshold(self, tmp_db, make_goal):
-        from src.db import database as db
+        from src.data import database as db
         goal = make_goal()
         node = db.create_node("High Risk", goal_id=goal["id"], strictness_level="critical")
         assert node["mastery_threshold"] == 0.95
 
     def test_create_node_familiarity_threshold(self, tmp_db, make_goal):
-        from src.db import database as db
+        from src.data import database as db
         goal = make_goal()
         node = db.create_node("Background", goal_id=goal["id"], strictness_level="familiarity")
         assert node["mastery_threshold"] == 0.60
 
     def test_get_node_parses_json_fields(self, tmp_db, make_goal):
-        from src.db import database as db
+        from src.data import database as db
         goal = make_goal()
         db.create_node(
             "Node With FP",
@@ -138,11 +138,11 @@ class TestNodes:
         assert node["qa_set"][0]["question"] == "Q1"
 
     def test_get_node_missing_returns_none(self, tmp_db):
-        from src.db import database as db
+        from src.data import database as db
         assert db.get_node("missing") is None
 
     def test_list_nodes_atomic_only(self, tmp_db, make_goal):
-        from src.db import database as db
+        from src.data import database as db
         goal = make_goal()
         db.create_node("Atomic", goal_id=goal["id"], is_atomic=True)
         db.create_node("Intermediate", goal_id=goal["id"], is_atomic=False)
@@ -151,7 +151,7 @@ class TestNodes:
         assert atomic[0]["title"] == "Atomic"
 
     def test_list_nodes_all(self, tmp_db, make_goal):
-        from src.db import database as db
+        from src.data import database as db
         goal = make_goal()
         db.create_node("A", goal_id=goal["id"])
         db.create_node("B", goal_id=goal["id"])
@@ -162,7 +162,7 @@ class TestNodes:
 
 class TestEdges:
     def test_create_edge(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         n1 = make_node("Node A")
         n2 = make_node("Node B", goal_id=n1["goal_id"])
         edge = db.create_edge(n1["id"], n2["id"])
@@ -171,7 +171,7 @@ class TestEdges:
         assert edge["edge_type"] == "prerequisite"
 
     def test_create_edge_duplicate_ignored(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         n1 = make_node("N1")
         n2 = make_node("N2", goal_id=n1["goal_id"])
         db.create_edge(n1["id"], n2["id"])
@@ -179,7 +179,7 @@ class TestEdges:
         db.create_edge(n1["id"], n2["id"])
 
     def test_get_prerequisites(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         n1 = make_node("Pre")
         n2 = make_node("Post", goal_id=n1["goal_id"])
         db.create_edge(n1["id"], n2["id"])
@@ -188,7 +188,7 @@ class TestEdges:
         assert prereqs[0]["id"] == n1["id"]
 
     def test_get_dependents(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         n1 = make_node("Pre")
         n2 = make_node("Post", goal_id=n1["goal_id"])
         db.create_edge(n1["id"], n2["id"])
@@ -197,7 +197,7 @@ class TestEdges:
         assert deps[0]["id"] == n2["id"]
 
     def test_get_prerequisites_none(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         assert db.get_prerequisites(node["id"]) == []
 
@@ -206,7 +206,7 @@ class TestEdges:
 
 class TestUserKnowledgeState:
     def test_upsert_creates_new_state(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         db.upsert_state(node["id"], status="learning", raw_score=0.5)
         state = db.get_state(node["id"])
@@ -214,7 +214,7 @@ class TestUserKnowledgeState:
         assert state["raw_score"] == 0.5
 
     def test_upsert_updates_existing_state(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         db.upsert_state(node["id"], status="learning")
         db.upsert_state(node["id"], status="mastered", raw_score=0.9)
@@ -223,13 +223,13 @@ class TestUserKnowledgeState:
         assert state["raw_score"] == 0.9
 
     def test_get_state_missing_returns_falsy(self, tmp_db):
-        from src.db import database as db
+        from src.data import database as db
         # get_state uses row_to_dict which returns {} for a missing row
         result = db.get_state("missing-node")
         assert not result
 
     def test_list_states_all(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         n1 = make_node("N1")
         n2 = make_node("N2", goal_id=n1["goal_id"])
         db.upsert_state(n1["id"], status="mastered")
@@ -238,7 +238,7 @@ class TestUserKnowledgeState:
         assert len(all_states) >= 2
 
     def test_list_states_filtered_by_status(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         n1 = make_node("N1")
         n2 = make_node("N2", goal_id=n1["goal_id"])
         db.upsert_state(n1["id"], status="mastered")
@@ -251,7 +251,7 @@ class TestUserKnowledgeState:
 
 class TestReviewSchedule:
     def test_create_review(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         scheduled = datetime.now(timezone.utc).isoformat()
         review = db.create_review(node["id"], scheduled_at=scheduled, review_round=1)
@@ -260,7 +260,7 @@ class TestReviewSchedule:
         assert review["review_round"] == 1
 
     def test_get_due_reviews_returns_overdue(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         past = (datetime.now(timezone.utc) - timedelta(days=5)).isoformat()
         db.create_review(node["id"], scheduled_at=past)
@@ -269,7 +269,7 @@ class TestReviewSchedule:
         assert any(r["node_id"] == node["id"] for r in due)
 
     def test_get_due_reviews_excludes_future(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         future = (datetime.now(timezone.utc) + timedelta(days=10)).isoformat()
         db.create_review(node["id"], scheduled_at=future)
@@ -277,7 +277,7 @@ class TestReviewSchedule:
         assert all(r["node_id"] != node["id"] for r in due)
 
     def test_complete_review(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         review = db.create_review(node["id"], scheduled_at=datetime.now(timezone.utc).isoformat())
         db.complete_review(review["id"], score=0.85, next_interval_days=7)
@@ -292,7 +292,7 @@ class TestReviewSchedule:
 
 class TestNodeOutlines:
     def test_create_outline(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         sections = [{"index": 1, "title": "Intro", "content": "...", "covered": False}]
         outline = db.create_outline(node["id"], sections=sections)
@@ -300,7 +300,7 @@ class TestNodeOutlines:
         assert outline["status"] == "draft"
 
     def test_get_outline_parses_sections(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         sections = [{"index": 1, "title": "S1", "content": "c", "covered": False}]
         db.create_outline(node["id"], sections=sections)
@@ -309,12 +309,12 @@ class TestNodeOutlines:
         assert outline["sections"][0]["title"] == "S1"
 
     def test_get_outline_missing_returns_none(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         assert db.get_outline(node["id"]) is None
 
     def test_update_outline_status(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         outline = db.create_outline(node["id"], sections=[])
         db.update_outline(outline["id"], status="validated")
@@ -323,7 +323,7 @@ class TestNodeOutlines:
         assert row["status"] == "validated"
 
     def test_update_outline_sections_list(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         outline = db.create_outline(node["id"], sections=[])
         new_sections = [{"index": 1, "title": "Updated", "covered": True}]
@@ -336,7 +336,7 @@ class TestNodeOutlines:
 
 class TestLearningSessions:
     def test_create_session(self, tmp_db, make_node, make_outline):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         outline = make_outline(node_id=node["id"])
         session = db.create_learning_session(node["id"], outline["id"])
@@ -346,7 +346,7 @@ class TestLearningSessions:
         assert session["covered_sections"] == "[]"
 
     def test_get_active_session(self, tmp_db, make_node, make_outline):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         outline = make_outline(node_id=node["id"])
         created = db.create_learning_session(node["id"], outline["id"])
@@ -355,12 +355,12 @@ class TestLearningSessions:
         assert isinstance(fetched["covered_sections"], list)
 
     def test_get_active_session_none_when_not_exists(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         assert db.get_active_session(node["id"]) is None
 
     def test_update_session_progress(self, tmp_db, make_node, make_outline):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         outline = make_outline(node_id=node["id"])
         session = db.create_learning_session(node["id"], outline["id"])
@@ -371,7 +371,7 @@ class TestLearningSessions:
         assert 2 in updated["covered_sections"]
 
     def test_update_session_status_to_completed(self, tmp_db, make_node, make_outline):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         outline = make_outline(node_id=node["id"])
         session = db.create_learning_session(node["id"], outline["id"])
@@ -384,7 +384,7 @@ class TestLearningSessions:
 
 class TestChatMessages:
     def test_add_and_get_messages(self, tmp_db, make_node, make_outline):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         outline = make_outline(node_id=node["id"])
         session = db.create_learning_session(node["id"], outline["id"])
@@ -398,7 +398,7 @@ class TestChatMessages:
         assert history[1]["content"] == "Hi there!"
 
     def test_get_chat_history_respects_limit(self, tmp_db, make_node, make_outline):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         outline = make_outline(node_id=node["id"])
         session = db.create_learning_session(node["id"], outline["id"])
@@ -410,7 +410,7 @@ class TestChatMessages:
         assert len(history) == 3
 
     def test_get_chat_history_empty(self, tmp_db, make_node, make_outline):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         outline = make_outline(node_id=node["id"])
         session = db.create_learning_session(node["id"], outline["id"])
@@ -421,7 +421,7 @@ class TestChatMessages:
 
 class TestExam:
     def test_create_exam(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         exam = db.create_exam(node["id"])
         assert exam["node_id"] == node["id"]
@@ -429,7 +429,7 @@ class TestExam:
         assert exam["passed"] is None
 
     def test_add_exam_question(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         exam = db.create_exam(node["id"])
         q = db.add_exam_question(
@@ -444,7 +444,7 @@ class TestExam:
         assert q["score"] is None
 
     def test_answer_exam_question(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         exam = db.create_exam(node["id"])
         q = db.add_exam_question(exam["id"], question="Q?", expected_answer="A.")
@@ -454,7 +454,7 @@ class TestExam:
         assert questions[0]["score"] == 0.8
 
     def test_finish_exam(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         exam = db.create_exam(node["id"])
         db.finish_exam(exam["id"], total_score=0.85, passed=True)
@@ -465,7 +465,7 @@ class TestExam:
         assert row["finished_at"] is not None
 
     def test_get_exam_questions_parses_options(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         exam = db.create_exam(node["id"])
         db.add_exam_question(
@@ -484,14 +484,14 @@ class TestExam:
 
 class TestErrorNotebook:
     def _setup(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node = make_node()
         exam = db.create_exam(node["id"])
         q = db.add_exam_question(exam["id"], question="Q?", expected_answer="A.")
         return node, exam, q
 
     def test_add_error(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node, exam, q = self._setup(tmp_db, make_node)
         entry = db.add_error(
             node_id=node["id"],
@@ -508,7 +508,7 @@ class TestErrorNotebook:
         assert entry["review_count"] == 0
 
     def test_list_errors_all(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node, exam, q = self._setup(tmp_db, make_node)
         db.add_error(node["id"], exam["id"], q["id"], "§1", "incomplete",
                      "Q?", "partial", "Full answer")
@@ -516,7 +516,7 @@ class TestErrorNotebook:
         assert len(errors) >= 1
 
     def test_list_errors_filtered_by_node(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node, exam, q = self._setup(tmp_db, make_node)
         db.add_error(node["id"], exam["id"], q["id"], "§1", "incomplete",
                      "Q?", "partial", "Full")
@@ -524,7 +524,7 @@ class TestErrorNotebook:
         assert all(e["node_id"] == node["id"] for e in errors)
 
     def test_list_errors_filtered_by_type(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node, exam, q = self._setup(tmp_db, make_node)
         db.add_error(node["id"], exam["id"], q["id"], "§1", "boundary_unclear",
                      "Q?", "partial", "Full")
@@ -532,7 +532,7 @@ class TestErrorNotebook:
         assert all(e["error_type"] == "boundary_unclear" for e in errors)
 
     def test_list_errors_parses_related_nodes(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node, exam, q = self._setup(tmp_db, make_node)
         db.add_error(
             node["id"], exam["id"], q["id"], "§1", "incomplete",
@@ -546,7 +546,7 @@ class TestErrorNotebook:
         assert "id1" in err["related_node_ids"]
 
     def test_get_errors_for_node(self, tmp_db, make_node):
-        from src.db import database as db
+        from src.data import database as db
         node, exam, q = self._setup(tmp_db, make_node)
         db.add_error(node["id"], exam["id"], q["id"], "§1", "incomplete",
                      "Q?", "w", "r")
