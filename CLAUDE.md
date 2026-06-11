@@ -171,3 +171,5 @@ Tests MUST cover:
 - Error paths (invalid input, failed API calls)
 
 Do NOT consider an implementation complete until `pytest` passes.
+
+## Imported Claude Cowork project instructions
