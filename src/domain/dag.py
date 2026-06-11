@@ -1,5 +1,5 @@
 """
-File: graph/dag.py
+File: src/domain/dag.py
 
 Purpose:
     DAG traversal, topological sorting, path finding, and Ebbinghaus
@@ -24,8 +24,8 @@ import math
 from datetime import datetime, timezone
 from typing import Optional
 
-from src import config
-from src.db import database as db
+from src.infrastructure import config
+from src.data import database as db
 
 
 # ── Mastery Calculations ───────────────────────────────────────────────────────

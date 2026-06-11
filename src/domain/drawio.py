@@ -1,5 +1,5 @@
 """
-File: graph/drawio.py
+File: src/domain/drawio.py
 
 Purpose:
     Export a goal's knowledge graph into a draw.io-compatible diagram file.
@@ -27,8 +27,8 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
 
-from src.db import database as db
-from src.graph import dag
+from src.data import database as db
+from src.domain import dag
 
 _NODE_WIDTH = 240
 _NODE_HEIGHT = 92
