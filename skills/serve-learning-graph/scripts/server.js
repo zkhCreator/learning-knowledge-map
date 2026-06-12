@@ -480,14 +480,14 @@ function listenOnAvailablePort(server, host, preferredPort) {
 
 // Sidecar file recording the live host URL (with the real, possibly-bumped
 // port) so generation skills running in a separate process can build a clickable
-// deep link back to this page. See scripts/web_link.py and docs/16.
-function sidecarPath() {
-  const projectRoot = path.resolve(__dirname, "..", "..", "..");
-  return path.join(projectRoot, "data", ".web_url");
+// deep link back to this page. It lives next to the resolved database file so
+// the reader (src/infrastructure/web_link.py) finds it via DB_PATH. See docs/20.
+function sidecarPath(dbPath) {
+  return path.join(path.dirname(dbPath), ".web_url");
 }
 
-function writeSidecar(url) {
-  const file = sidecarPath();
+function writeSidecar(url, dbPath) {
+  const file = sidecarPath(dbPath);
   try {
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, `${url}\n`, "utf8");
@@ -545,7 +545,7 @@ async function main() {
   console.log(`Loaded ${graph.summary.node_count} nodes and ${graph.summary.edge_count} edges from ${graph.db_path}`);
   console.log(`Goal: ${graph.goal.title} (${graph.goal.id.slice(0, 8)})`);
   console.log(`Listening on ${url}`);
-  writeSidecar(url);
+  writeSidecar(url, graph.db_path);
   console.log("Stop with Ctrl+C");
   if (!args.noOpen) {
     try {

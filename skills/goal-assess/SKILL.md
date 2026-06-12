@@ -27,8 +27,13 @@ This assessment runs in the GUI workflow host (the `serve-learning-graph`
 skill). Start that server and open the Assess view:
 
 ```bash
-node skills/serve-learning-graph/scripts/server.js --db data/learning.db --goal <goal-id-or-prefix> --user default --port 8765
+node "$SKILLS_DIR"/serve-learning-graph/scripts/server.js --db learning.db --goal <goal-id-or-prefix> --user default --port 8765
 ```
+
+`$SKILLS_DIR` is the directory that contains the installed skills — `skills/`
+when working inside this repository, or the agent's skill directory (e.g.
+`~/.claude/skills`) after `npx skills add`. `serve-learning-graph` is always a
+sibling of this skill and must be installed alongside it.
 
 Then open `http://127.0.0.1:<port>/?view=assess` (optionally `&goal=<goal-id>`).
 
@@ -67,7 +72,8 @@ Run this skill in the tool to do the assessment, then hand the learner a deep
 link back to the web host:
 
 ```bash
-python -m src.infrastructure.web_link --view assess --goal <goal-id-or-prefix>
+PYTHONPATH="$SKILLS_DIR"/serve-learning-graph/_core python -m src.infrastructure.web_link --view assess --goal <goal-id-or-prefix>
+# (inside this repository, plain `python -m src.infrastructure.web_link` works too)
 ```
 
 (The `serve-learning-graph` host must be running; the link uses its live URL.)
@@ -78,3 +84,11 @@ python -m src.infrastructure.web_link --view assess --goal <goal-id-or-prefix>
   `assessment_start` / `assessment_answer` actions back via `agent_required`.
 - `src/services/assessment.py` holds the stateless assessment service.
 - `src/infrastructure/web_link.py` builds the web deep link from the serve sidecar URL.
+
+## Requirements
+
+- Install `serve-learning-graph` alongside this skill (it hosts the Assess view
+  and the data-plane API).
+- Probe generation / scoring run in the agent (this tool); the web host stays
+  LLM-free. API keys come from environment variables (`LLM_API_KEY` /
+  `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`).

@@ -30,6 +30,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import sqlite3
 import sys
@@ -39,9 +40,12 @@ from pathlib import Path
 from typing import Any
 
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+# Resolve the shared runtime (vendored _core/ when installed, repo root in
+# development) — see docs/22 and scripts/_bootstrap.py.
+_SCRIPT_DIR = str(Path(__file__).resolve().parent)
+if _SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPT_DIR)
+import _bootstrap  # noqa: E402,F401
 
 from src.data.database import SCHEMA_SQL as CLI_SCHEMA_SQL  # noqa: E402
 
@@ -101,28 +105,21 @@ def _id() -> str:
     return str(uuid.uuid4())
 
 
-def find_project_root(start: Path) -> Path:
-    """Return nearest ancestor containing .git; fall back to start."""
-    current = start if start.is_dir() else start.parent
-    current = current.resolve()
-    for candidate in (current, *current.parents):
-        if (candidate / ".git").exists():
-            return candidate
-    return current
-
-
 def resolve_db_path(db_path: str | Path | None, cwd: Path | None = None) -> Path:
     """
     Resolve where skill persistence should write SQLite data.
 
-    Rules:
-    - No user path: current execution project root / learning.db.
-    - Directory path: that directory / learning.db.
-    - .db/.sqlite/.sqlite3 path: that file.
+    Rules (docs/20, canonical copy in src/infrastructure/config.py):
+    - Explicit directory path: that directory / learning.db.
+    - Explicit .db/.sqlite/.sqlite3 path: that file.
+    - No user path: DB_PATH env var, else <cwd>/learning.db.
     """
     base = (cwd or Path.cwd()).resolve()
     if db_path is None:
-        return find_project_root(base) / DEFAULT_DB_FILENAME
+        env_path = os.environ.get("DB_PATH")
+        if env_path:
+            return Path(env_path).expanduser().resolve()
+        return base / DEFAULT_DB_FILENAME
 
     candidate = Path(db_path).expanduser()
     if not candidate.is_absolute():

@@ -40,14 +40,15 @@ graph is queryable by the project's existing CLI tables and indexes.
 6. Output both a concise human-readable plan and a machine-readable JSON block matching
    `references/output-schema.md`.
 7. Persist the final JSON with `scripts/persist_result.py`.
-   - If the user does not specify a DB location, use the current execution
-     project root and write `learning.db` there.
+   - If the user does not specify a DB location, honour the `DB_PATH`
+     environment variable when set; otherwise write `learning.db` in the
+     current working directory (docs/20).
    - If the user specifies a directory, write `learning.db` inside it.
    - If the user specifies a `.db`, `.sqlite`, or `.sqlite3` path, use that file.
    - The script initialises the current CLI schema from `src.data.database.SCHEMA_SQL`
      and appends skill import metadata tables and indexes.
    - If the user wants the existing CLI to read a non-default database, tell them
-     to run the CLI with `DB_PATH=<db_path>` or persist with `--db data/learning.db`.
+     to run the CLI with `DB_PATH=<db_path>` or persist with `--db learning.db`.
 8. Report the DB path, `goal_id`, and `import_id` from the script summary.
 
 ## Review and Persistence Rules
@@ -83,3 +84,11 @@ graph is queryable by the project's existing CLI tables and indexes.
 - `references/review-checklist.md`: Provider-agnostic reviewer subagent checklist and expected response.
 - `references/example-output.md`: Compact example of the expected final shape.
 - `scripts/persist_result.py`: Deterministic JSON/Markdown-to-SQLite persistence step.
+
+## Requirements
+
+- Python ≥ 3.10. `scripts/persist_result.py` is pure stdlib + SQLite; the
+  decomposition itself runs in the agent (no extra pip packages needed).
+- The shared runtime ships vendored in `_core/` — no repository checkout needed
+  after `npx skills add <owner>/<repo> -a claude-code -a codex`.
+- Web search during decomposition is optional; skip it when unavailable.

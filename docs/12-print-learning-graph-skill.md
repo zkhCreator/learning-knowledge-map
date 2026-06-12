@@ -26,7 +26,7 @@ skills/print-learning-graph/
 
 输入：
 
-- SQLite DB 路径；默认优先使用 `DB_PATH`，否则使用当前项目 `data/learning.db`。
+- SQLite DB 路径；默认优先使用 `DB_PATH`，否则使用当前工作目录 `learning.db`（docs/20）。
 - Goal ID 或前缀；如果省略且当前用户只有一个目标，可自动选择该目标。
 - User ID；默认 `default`。
 

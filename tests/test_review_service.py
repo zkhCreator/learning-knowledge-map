@@ -184,3 +184,88 @@ def test_finish_review_unknown_exam_errors(make_node):
     with pytest.raises(review_svc.ReviewError) as exc:
         review_svc.finish_review(exam_id="nope", review_id=rev["id"], user_id="default")
     assert exc.value.code in ("exam_not_found", "review_not_found")
+
+
+# ── Round accounting + needs_review (docs/21 B3/B7) ─────────────────────────────
+
+def test_finish_review_badly_failed_resets_round(make_node):
+    node, rev = _make_review_node(make_node, title="Reset Node", scheduled_days=-1, review_round=3)
+    exam = db.create_exam(node_id=node["id"])
+    q = db.add_exam_question(exam_id=exam["id"], question="Q?", expected_answer="A")
+    db.answer_exam_question(q["id"], user_answer="bad", score=0.2)
+
+    review_svc.finish_review(exam_id=exam["id"], review_id=rev["id"], user_id="default")
+
+    with db.get_connection() as conn:
+        new_rev = conn.execute(
+            "SELECT * FROM review_schedule WHERE node_id=? AND status='pending'",
+            (node["id"],),
+        ).fetchone()
+        completed = conn.execute(
+            "SELECT * FROM review_schedule WHERE id=?", (rev["id"],)
+        ).fetchone()
+    assert new_rev["review_round"] == 1
+    assert completed["next_interval_days"] == 1
+
+
+def test_finish_review_partial_fail_keeps_round(make_node):
+    node, rev = _make_review_node(make_node, title="Partial Node", scheduled_days=-1, review_round=3)
+    exam = db.create_exam(node_id=node["id"])
+    q = db.add_exam_question(exam_id=exam["id"], question="Q?", expected_answer="A")
+    db.answer_exam_question(q["id"], user_answer="meh", score=0.6)
+
+    review_svc.finish_review(exam_id=exam["id"], review_id=rev["id"], user_id="default")
+
+    with db.get_connection() as conn:
+        new_rev = conn.execute(
+            "SELECT * FROM review_schedule WHERE node_id=? AND status='pending'",
+            (node["id"],),
+        ).fetchone()
+        completed = conn.execute(
+            "SELECT * FROM review_schedule WHERE id=?", (rev["id"],)
+        ).fetchone()
+    assert new_rev["review_round"] == 3
+    assert completed["next_interval_days"] == 3  # base 7 → halved
+
+
+def test_finish_review_failed_sets_needs_review(make_node):
+    node, rev = _make_review_node(make_node, title="Demote Node", scheduled_days=-1)
+    exam = db.create_exam(node_id=node["id"])
+    q = db.add_exam_question(exam_id=exam["id"], question="Q?", expected_answer="A")
+    db.answer_exam_question(q["id"], user_answer="bad", score=0.2)
+
+    review_svc.finish_review(exam_id=exam["id"], review_id=rev["id"], user_id="default")
+
+    state = db.get_state(node["id"])
+    assert state["status"] == "needs_review"
+
+
+def test_get_queue_demotes_decayed_mastered_nodes(make_node):
+    """mastered + effective_mastery below threshold → needs_review (docs/21 B7)."""
+    node = make_node(title="Decayed", mastery_threshold=0.80)
+    # raw 0.9 reviewed 30 days ago with stability 2.0 → effective ≈ 0, far below 0.8
+    db.upsert_state(
+        node_id=node["id"], status="mastered", raw_score=0.9, stability=2.0,
+        last_reviewed=_iso(-30),
+    )
+    db.create_review(node_id=node["id"], scheduled_at=_iso(-1), review_round=2)
+
+    review_svc.get_queue(user_id="default")
+
+    state = db.get_state(node["id"])
+    assert state["status"] == "needs_review"
+
+
+def test_get_queue_keeps_fresh_mastered_nodes(make_node):
+    node = make_node(title="Fresh", mastery_threshold=0.80)
+    # Reviewed just now → effective ≈ raw 0.95, above threshold
+    db.upsert_state(
+        node_id=node["id"], status="mastered", raw_score=0.95, stability=5.0,
+        last_reviewed=_iso(0),
+    )
+    db.create_review(node_id=node["id"], scheduled_at=_iso(1), review_round=2)
+
+    review_svc.get_queue(user_id="default")
+
+    state = db.get_state(node["id"])
+    assert state["status"] == "mastered"

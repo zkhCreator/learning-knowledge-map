@@ -13,7 +13,7 @@ as a terminal tree. This is the basic text-rendering skill.
 1. Resolve the database path:
    - Use the user's explicit DB path when provided.
    - Otherwise use `DB_PATH` from the environment when set.
-   - Otherwise use `data/learning.db` under the current project root.
+   - Otherwise use `learning.db` in the current working directory. If the file does not exist there, ask the user to confirm the path instead of creating a new database.
 2. Resolve the goal:
    - Use a full goal ID or prefix when provided.
    - If no goal is provided and the user has exactly one goal, use it.
@@ -21,7 +21,7 @@ as a terminal tree. This is the basic text-rendering skill.
 3. Run the bundled script:
 
    ```bash
-   python3 skills/print-learning-graph/scripts/print_graph.py --db data/learning.db --goal <goal-id-or-prefix> --user default
+   python3 skills/print-learning-graph/scripts/print_graph.py --db learning.db --goal <goal-id-or-prefix> --user default
    ```
 
 4. Return the printed tree to the user. Mention the DB path and goal ID if the
@@ -39,3 +39,8 @@ as a terminal tree. This is the basic text-rendering skill.
 
 - `scripts/print_graph.py` is self-contained and only uses Python standard
   library modules.
+
+## Requirements
+
+- Python ≥ 3.10 only — `scripts/print_graph.py` is deliberately pure stdlib
+  (no pip packages, no LLM, no repository checkout needed).

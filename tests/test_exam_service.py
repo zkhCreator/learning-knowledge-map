@@ -123,7 +123,7 @@ class TestStartExam:
 
         captured = {}
 
-        def _gen(node_arg, sections, model=None):
+        def _gen(node_arg, sections, model=None, **kwargs):
             captured["sections"] = sections
             return _questions(1)
 
@@ -387,3 +387,27 @@ class TestExamDataPlane:
                 user_id="default", user_answer="x",
             )
         assert exc.value.code == "question_not_found"
+
+
+# ── No orphan exam attempts on malformed generation (docs/21 B5) ────────────────
+
+class TestNoOrphanExamOnMalformedQuestions:
+    @patch("src.agents.examiner.llm.call_json")
+    def test_start_exam_leaves_no_attempt_row(self, mock_call, tmp_db, make_node, make_outline):
+        from src.data import database as db
+        from src.services.exam import ExamError, start_exam
+
+        node = make_node()
+        make_outline(node_id=node["id"])
+        # Every question is missing a required field → generation must fail …
+        mock_call.return_value = {"questions": [{"question": ""}, {"expected_answer": "x"}]}
+
+        with pytest.raises((ExamError, ValueError)):
+            start_exam(node=node["id"], user_id="default")
+
+        # … and no exam attempt may be left behind.
+        with db.get_connection() as conn:
+            count = conn.execute(
+                "SELECT COUNT(*) AS c FROM exam_attempts WHERE node_id=?", (node["id"],)
+            ).fetchone()
+        assert count["c"] == 0

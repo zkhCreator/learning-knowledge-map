@@ -234,3 +234,58 @@ class TestSocraticWithMnemonic:
         combined = system_prompt + user_prompt
         # Should reference the mnemonic or spatial context somewhere
         assert "助记" in combined or "mnemonic" in combined or "银行" in combined or "空间" in combined
+
+
+class TestAnchorCleanupOnRegeneration:
+    """Outline regeneration must clear stale anchors unconditionally (docs/21 B6)."""
+
+    def _plain_sections(self):
+        return {
+            "sections": [
+                {
+                    "index": 1,
+                    "title": "新版第一节",
+                    "content": "内容...",
+                    "needs_search": False,
+                    "sources": [],
+                    "analogy": None,
+                    "analogy_source_node": None,
+                    "covered": False,
+                }
+            ]
+        }
+
+    @patch("src.agents.teacher.llm.call_json")
+    def test_regeneration_without_strategy_clears_old_anchors(self, mock_call_json, make_node):
+        from src.data import database as db
+        from src.agents.teacher import generate_outline
+
+        node = make_node(title="WAL 日志")
+        db.create_cognitive_profile(
+            user_id="default",
+            spatial_weight=0.7,
+            symbolic_weight=0.2,
+            narrative_weight=0.1,
+            assessed=True,
+        )
+
+        helper = TestOutlineWithMnemonic()
+        mock_call_json.side_effect = [
+            helper._mock_sections_with_mnemonic("spatial"),
+            {"approved": True, "issues": [], "corrections": {}},
+        ]
+        generate_outline(node_id=node["id"], force_regenerate=True)
+        assert len(db.get_mnemonic_anchors(node_id=node["id"], user_id="default")) == 2
+
+        # Profile disappears (e.g. reset) → regeneration has no mnemonic strategy,
+        # but the stale anchors from the previous section layout must still go away.
+        with db.get_connection() as conn:
+            conn.execute("DELETE FROM user_cognitive_profile WHERE user_id=?", ("default",))
+
+        mock_call_json.side_effect = [
+            self._plain_sections(),
+            {"approved": True, "issues": [], "corrections": {}},
+        ]
+        generate_outline(node_id=node["id"], force_regenerate=True)
+
+        assert db.get_mnemonic_anchors(node_id=node["id"], user_id="default") == []

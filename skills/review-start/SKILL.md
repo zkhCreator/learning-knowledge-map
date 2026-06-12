@@ -31,8 +31,13 @@ Review runs in the GUI workflow host (the `serve-learning-graph` skill). Start
 that server, open the Review view, and pick a review from the queue:
 
 ```bash
-node skills/serve-learning-graph/scripts/server.js --db data/learning.db --goal <goal-id-or-prefix> --user default --port 8765
+node "$SKILLS_DIR"/serve-learning-graph/scripts/server.js --db learning.db --goal <goal-id-or-prefix> --user default --port 8765
 ```
+
+`$SKILLS_DIR` is the directory that contains the installed skills — `skills/`
+when working inside this repository, or the agent's skill directory (e.g.
+`~/.claude/skills`) after `npx skills add`. `serve-learning-graph` is always a
+sibling of this skill and must be installed alongside it.
 
 Then open `http://127.0.0.1:<port>/?view=review`, choose a review (which opens
 `?view=review&review=<review-id>`), review the context, and start the re-exam.
@@ -68,7 +73,8 @@ is LLM work (see `docs/16-web-data-plane-handoff.md`). Run this skill in the too
 to take the review, then hand the learner a deep link back to the web host:
 
 ```bash
-python -m src.infrastructure.web_link --view review --node <node-id-or-prefix>
+PYTHONPATH="$SKILLS_DIR"/serve-learning-graph/_core python -m src.infrastructure.web_link --view review --node <node-id-or-prefix>
+# (inside this repository, plain `python -m src.infrastructure.web_link` works too)
 ```
 
 (The `serve-learning-graph` host must be running; the link uses its live URL.)
@@ -80,3 +86,10 @@ python -m src.infrastructure.web_link --view review --node <node-id-or-prefix>
   `agent_required`.
 - `src/services/review.py` holds the stateless review-start service.
 - `src/infrastructure/web_link.py` builds the web deep link from the serve sidecar URL.
+
+## Requirements
+
+- Install `serve-learning-graph` and `exam-start` alongside this skill: the
+  re-exam reuses the exam primitives, and the web host serves the Review view.
+- LLM steps run in the agent (this tool); API keys come from environment
+  variables (`LLM_API_KEY` / `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`).

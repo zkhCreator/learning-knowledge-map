@@ -31,6 +31,7 @@ import { finishExam, getExam, getGraph, recordExamAnswer, startExam } from "../.
 import ApiErrorNotice from "../../components/ApiErrorNotice";
 import type {
   ApiError,
+  ExamMnemonic,
   ExamNode,
   ExamViewData,
   ExamViewQuestion,
@@ -67,6 +68,7 @@ export default function ExamView() {
   const [index, setIndex] = useState(0);
   const [draft, setDraft] = useState("");
   const [finished, setFinished] = useState(false);
+  const [mnemonic, setMnemonic] = useState<ExamMnemonic | null>(null);
 
   // Load the goal's atomic nodes for the picker.
   useEffect(() => {
@@ -108,6 +110,7 @@ export default function ExamView() {
     setExamNode(data.node);
     setQuestions(data.questions);
     setFinished(data.finished);
+    setMnemonic(data.mnemonic ?? null);
     // Resume at the first unanswered question.
     const firstUnanswered = data.questions.findIndex((q) => !q.user_answer);
     const start = firstUnanswered === -1 ? 0 : firstUnanswered;
@@ -187,6 +190,7 @@ export default function ExamView() {
     setIndex(0);
     setDraft("");
     setFinished(false);
+    setMnemonic(null);
     setError(null);
   }, []);
 
@@ -269,6 +273,18 @@ export default function ExamView() {
 
           {phase === "answering" && examNode && current ? (
             <div className="exam-run">
+              {mnemonic?.prompt ? (
+                <details className="exam-mnemonic">
+                  <summary>🧠 考前回忆 — 先在脑中回忆，再开始作答</summary>
+                  <p className="exam-mnemonic-prompt">{mnemonic.prompt}</p>
+                  {mnemonic.display ? (
+                    <details className="exam-mnemonic-display">
+                      <summary>看锚点参考</summary>
+                      <p>{mnemonic.display}</p>
+                    </details>
+                  ) : null}
+                </details>
+              ) : null}
               <div className="exam-node-head">
                 <span className="exam-node-title">{examNode.title}</span>
                 <span className="exam-node-count">

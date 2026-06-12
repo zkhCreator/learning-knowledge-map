@@ -69,7 +69,7 @@ class TestGenerateQuestions:
     def test_empty_response_raises(self, mock_call):
         mock_call.return_value = {"questions": []}
         from src.agents.examiner import generate_questions
-        with pytest.raises(ValueError, match="empty"):
+        with pytest.raises(ValueError, match="no valid questions"):
             generate_questions(self._node(), [])
 
     @patch("src.agents.examiner.llm.call_json")
@@ -311,3 +311,68 @@ class TestFinalizeExam:
                           "_explanation": "", "_related_concepts": []})
         summary = _finalize_exam(exam["id"], node, scored)
         assert summary["passed"] is False
+
+
+# ── Error-notebook threshold follows node strictness (docs/21 B4) ───────────────
+
+class TestErrorNotebookThreshold:
+    def _run(self, tmp_db, make_node, *, threshold, scores):
+        from src.data import database as db
+        from src.agents.examiner import _finalize_exam
+
+        node = make_node(mastery_threshold=threshold)
+        exam = db.create_exam(node["id"])
+        scored = []
+        for i, score in enumerate(scores, 1):
+            q = db.add_exam_question(
+                exam["id"], question=f"Q{i}?", expected_answer=f"A{i}.", source_section=i
+            )
+            db.answer_exam_question(q["id"], user_answer="ans", score=score)
+            enriched = dict(q)
+            enriched.update(score=score, user_answer="ans", _error_type="incomplete",
+                            _explanation="", _related_concepts=[])
+            scored.append(enriched)
+        _finalize_exam(exam["id"], node, scored)
+        return db.list_errors(node_id=node["id"])
+
+    def test_borderline_miss_on_strict_node_is_recorded(self, tmp_db, make_node):
+        # threshold 0.95: a 0.7 question is a real weak spot and must be logged
+        errors = self._run(tmp_db, make_node, threshold=0.95, scores=[0.7, 0.98])
+        assert len(errors) == 1
+
+    def test_above_lenient_threshold_not_recorded(self, tmp_db, make_node):
+        # threshold 0.60: 0.65 passes the node's own bar — no error entry
+        errors = self._run(tmp_db, make_node, threshold=0.60, scores=[0.65, 0.9])
+        assert len(errors) == 0
+
+
+# ── Malformed question filtering (docs/21 B5) ───────────────────────────────────
+
+class TestMalformedQuestionFiltering:
+    def _node(self):
+        return {"title": "T", "description": "", "strictness_level": "standard"}
+
+    @patch("src.agents.examiner.llm.call_json")
+    def test_malformed_questions_dropped(self, mock_call):
+        from src.agents.examiner import generate_questions
+
+        mock_call.return_value = {
+            "questions": [
+                {"question": "Valid?", "expected_answer": "Yes."},
+                {"question": "", "expected_answer": "missing question"},
+                {"expected_answer": "no question field"},
+                {"question": "no expected answer"},
+                "not even a dict",
+            ]
+        }
+        questions = generate_questions(self._node(), [])
+        assert len(questions) == 1
+        assert questions[0]["question"] == "Valid?"
+
+    @patch("src.agents.examiner.llm.call_json")
+    def test_all_malformed_raises(self, mock_call):
+        from src.agents.examiner import generate_questions
+
+        mock_call.return_value = {"questions": [{"question": ""}, {"expected_answer": "x"}]}
+        with pytest.raises(ValueError):
+            generate_questions(self._node(), [])

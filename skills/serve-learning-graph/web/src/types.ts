@@ -304,12 +304,21 @@ export interface ExamQuestion {
   is_expansion: boolean;
 }
 
+/** Pre-exam recall cue (docs/23 4b); shape matches ReviewMnemonic. */
+export interface ExamMnemonic {
+  strategy: string | null;
+  prompt: string;
+  display: string;
+}
+
 /** Response of POST /api/exams/start. */
 export interface ExamStartData {
   exam_id: string;
   node: ExamNode;
   questions: ExamQuestion[];
   total: number;
+  /** Pre-exam recall cue; null without a cognitive profile / anchors. */
+  mnemonic?: ExamMnemonic | null;
 }
 
 /** A question in the data-plane view, echoing any already-recorded answer. */
@@ -325,6 +334,8 @@ export interface ExamViewData {
   questions: ExamViewQuestion[];
   total: number;
   finished: boolean;
+  /** Pre-exam recall cue; null without a cognitive profile / anchors. */
+  mnemonic?: ExamMnemonic | null;
 }
 
 /** Response of POST /api/exams/<exam-id>/questions/<question-id>/record. */

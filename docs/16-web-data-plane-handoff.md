@@ -24,7 +24,7 @@
 ## 关键设计决策
 
 1. **永远交给工具**:web 设计上就是纯数据层,即使配了 key 也不在 web 跑 LLM。所有生成类动作一律返回 `agent_required`。
-2. **serve 启动时写 sidecar 文件**:serve 把实时 URL(含真实端口)写到 `data/.web_url`;生成 skill 读它拼深链(回退 `LDG_WEB_URL`,再回退 `http://localhost:8765`)。
+2. **serve 启动时写 sidecar 文件**:serve 把实时 URL(含真实端口)写到 数据库同目录的 `.web_url`（docs/20）;生成 skill 读它拼深链(回退 `LDG_WEB_URL`,再回退 `http://localhost:8765`)。
 
 ## 闸门(两层)
 

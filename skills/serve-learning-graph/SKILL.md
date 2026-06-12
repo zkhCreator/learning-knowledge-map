@@ -13,7 +13,7 @@ local React Flow page. This is the visual Node-server rendering skill.
 1. Resolve the database path:
    - Use the user's explicit DB path when provided.
    - Otherwise use `DB_PATH` from the environment when set.
-   - Otherwise use `data/learning.db` under the current project root.
+   - Otherwise use `learning.db` in the current working directory. If the file does not exist there, ask the user to confirm the path instead of creating a new database.
 2. Resolve the goal:
    - Use a full goal ID or prefix when provided.
    - If no goal is provided and the user has exactly one goal, use it.
@@ -21,8 +21,12 @@ local React Flow page. This is the visual Node-server rendering skill.
 3. Start the foreground Node server:
 
    ```bash
-   node skills/serve-learning-graph/scripts/server.js --db data/learning.db --goal <goal-id-or-prefix> --user default --port 8765
+   node "$SKILL_DIR"/scripts/server.js --db learning.db --goal <goal-id-or-prefix> --user default --port 8765
    ```
+
+`$SKILL_DIR` is this skill's own directory (`skills/serve-learning-graph` in
+this repository, or the installed copy under e.g.
+`~/.claude/skills/serve-learning-graph`).
 
 4. Tell the user the URL printed by the server. The server stops with `Ctrl+C`.
 
@@ -51,3 +55,13 @@ pnpm build
 - `scripts/server.js` starts the HTTP server and serves `web/dist`.
 - `web/` contains the React + TypeScript + React Flow source.
 - The server supports `--no-open` for automated tests.
+
+## Requirements
+
+- Node ≥ 18 for the server. The React frontend ships pre-built in `web/dist/`
+  — no pnpm/npm install or build step is needed after installation.
+- Python ≥ 3.10 for `scripts/export_graph.py` / `scripts/workflow_api.py`
+  (stdlib + SQLite; the shared runtime ships vendored in `_core/`). Point the
+  server at a specific interpreter with `--python` or the `PYTHON` env var.
+- The host is a pure data plane: it never calls the LLM. Generation actions
+  return an `agent_required` hand-off to the matching skill (docs/16).

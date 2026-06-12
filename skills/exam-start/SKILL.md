@@ -49,15 +49,20 @@ If the learner clicks a generation/scoring action in the web host, it returns an
 Generate an exam for a node:
 
 ```bash
-python skills/exam-start/scripts/exam_cli.py generate --db data/learning.db --node <node-id-or-prefix> --user default
+python "$SKILL_DIR"/scripts/exam_cli.py generate --db learning.db --node <node-id-or-prefix> --user default
 ```
+
+`$SKILL_DIR` is this skill's own directory (`skills/exam-start` in this
+repository, or the installed copy under e.g. `~/.claude/skills/exam-start`).
+The script resolves the shared runtime from its vendored `_core/` (installed)
+or the repository root (development) automatically.
 
 This prints the `exam_id` and a deep link like `…/?view=exam&exam=<exam_id>`.
 The learner opens it (the `serve-learning-graph` host must be running), answers,
 and saves. Then score + finalize:
 
 ```bash
-python skills/exam-start/scripts/exam_cli.py score --db data/learning.db --exam <exam_id> --user default
+python "$SKILL_DIR"/scripts/exam_cli.py score --db learning.db --exam <exam_id> --user default
 ```
 
 This scores each recorded answer, finalizes, and prints a result deep link.
@@ -85,3 +90,17 @@ This scores each recorded answer, finalizes, and prints a result deep link.
 - `scripts/workflow_api.py` (in `serve-learning-graph`) exposes the data-plane
   `exam_get` / `exam_record_answer` actions and hands generation/scoring back via
   `agent_required`.
+
+## Requirements
+
+- Python ≥ 3.10 with `pip install anthropic openai rich python-dotenv`
+  (question generation and scoring call the LLM; the vendored `_core/`
+  runtime degrades gracefully and reports what is missing).
+- API keys come from environment variables (`LLM_API_KEY` /
+  `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`); an `.env` in the working directory
+  is also honoured.
+- Install `serve-learning-graph` alongside this skill for the answer/score
+  loop in the browser.
+- Quality gates (docs/23): generation is reverse-validated and borderline
+  scores are spot-checked by default; set `EXAM_VALIDATE=0` /
+  `EXAM_SPOT_CHECK=0` to skip.

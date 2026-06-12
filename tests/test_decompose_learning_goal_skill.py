@@ -88,7 +88,7 @@ def test_skill_workflow_captures_confirmed_design():
         "Search only when",
         "Output both",
         "scripts/persist_result.py",
-        "current execution",
+        "current working",
         "learning.db",
         "Do not generate SQL",
         "If no subagent capability is available",

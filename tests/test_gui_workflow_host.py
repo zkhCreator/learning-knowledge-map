@@ -189,9 +189,10 @@ def test_node_server_exposes_gui_api_endpoints():
         legacy_graph = _get_json(url, "/graph.json")
         assert legacy_graph["goal"]["title"] == EXAMPLE_TITLE
 
-        # The server writes its live URL to the sidecar so generation skills can
-        # build a deep link back to this page.
-        sidecar = ROOT / "data" / ".web_url"
+        # The server writes its live URL to the sidecar next to the resolved
+        # database file (docs/20) so generation skills can build a deep link
+        # back to this page.
+        sidecar = EXAMPLE_DB.resolve().parent / ".web_url"
         assert sidecar.exists()
         assert sidecar.read_text(encoding="utf-8").strip() == url
     finally:

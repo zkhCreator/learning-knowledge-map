@@ -307,14 +307,14 @@ class TestRunReviewLoop:
         assert pending["cnt"] == 0
 
     @patch("src.agents.examiner.run_exam_loop")
-    def test_review_round_increments_on_reschedule(self, mock_exam, tmp_db, make_node):
-        """When a failed review creates the next entry, round is incremented."""
+    def test_badly_failed_review_resets_round(self, mock_exam, tmp_db, make_node):
+        """score < 0.5 resets the round to 1 with the round-1 interval (docs/21 B3)."""
         mock_exam.return_value = self._exam_summary(passed=False, score=0.2)
         from src.agents.reviewer import run_review_loop
         from src.data import database as db
 
         node = make_node()
-        _make_review(node["id"], scheduled_at=_past(1), review_round=2)
+        old = _make_review(node["id"], scheduled_at=_past(1), review_round=2)
 
         run_review_loop()
 
@@ -323,5 +323,50 @@ class TestRunReviewLoop:
                 "SELECT * FROM review_schedule WHERE node_id=? AND status='pending'",
                 (node["id"],),
             ).fetchone()
+            completed = conn.execute(
+                "SELECT * FROM review_schedule WHERE id=?", (old["id"],)
+            ).fetchone()
         assert new_rev is not None
-        assert new_rev["review_round"] == 3  # 2 + 1
+        assert new_rev["review_round"] == 1
+        assert completed["next_interval_days"] == 1
+
+    @patch("src.agents.examiner.run_exam_loop")
+    def test_partial_fail_keeps_round_and_halves_interval(self, mock_exam, tmp_db, make_node):
+        """0.5 ≤ score < threshold keeps the round and halves its base interval."""
+        mock_exam.return_value = self._exam_summary(passed=False, score=0.6)
+        from src.agents.reviewer import run_review_loop
+        from src.data import database as db
+
+        node = make_node()
+        old = _make_review(node["id"], scheduled_at=_past(1), review_round=3)
+
+        run_review_loop()
+
+        with db.get_connection() as conn:
+            new_rev = conn.execute(
+                "SELECT * FROM review_schedule WHERE node_id=? AND status='pending'",
+                (node["id"],),
+            ).fetchone()
+            completed = conn.execute(
+                "SELECT * FROM review_schedule WHERE id=?", (old["id"],)
+            ).fetchone()
+        assert new_rev is not None
+        assert new_rev["review_round"] == 3
+        assert completed["next_interval_days"] == 3  # base 7 → halved
+
+    @patch("src.agents.examiner.run_exam_loop")
+    def test_failed_review_sets_state_needs_review(self, mock_exam, tmp_db, make_node):
+        """A failed scheduled review demotes the state to needs_review (docs/21 B7)."""
+        mock_exam.return_value = self._exam_summary(passed=False, score=0.3)
+        from src.agents.reviewer import run_review_loop
+        from src.data import database as db
+
+        node = make_node()
+        db.upsert_state(node_id=node["id"], status="mastered", raw_score=0.9,
+                        stability=2.0, last_reviewed=_past(10))
+        _make_review(node["id"], scheduled_at=_past(1))
+
+        run_review_loop()
+
+        state = db.get_state(node["id"])
+        assert state["status"] == "needs_review"

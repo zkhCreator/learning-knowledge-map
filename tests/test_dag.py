@@ -219,3 +219,40 @@ class TestTopologicalOrder:
         order = topological_order(goal["id"])
         assert len(order) == 1
         assert order[0]["title"] == "Atomic"
+
+
+# ── next_review_state ──────────────────────────────────────────────────────────
+
+class TestNextReviewState:
+    """Single source of truth for review-round accounting (docs/21 B3).
+
+    Base intervals: [1, 3, 7, 14, 30, 90].
+    """
+
+    @pytest.mark.parametrize(
+        "review_round,score,threshold,expected_round,expected_interval",
+        [
+            # score < 0.5 → reset to round 1, 1 day, regardless of round
+            (1, 0.2, 0.80, 1, 1),
+            (3, 0.3, 0.80, 1, 1),
+            (6, 0.49, 0.95, 1, 1),
+            # 0.5 ≤ score < threshold → keep round, halve current base (min 1 day)
+            (1, 0.6, 0.80, 1, 1),    # base 1 → max(1, 0)
+            (2, 0.6, 0.80, 2, 1),    # base 3 → 1
+            (3, 0.6, 0.80, 3, 3),    # base 7 → 3
+            (5, 0.7, 0.80, 5, 15),   # base 30 → 15
+            # score ≥ threshold → advance round, next round's base interval
+            (1, 0.9, 0.80, 2, 3),
+            (2, 0.85, 0.80, 3, 7),
+            (5, 0.95, 0.80, 6, 90),
+            (6, 0.95, 0.80, 7, 90),  # clamped at last interval
+        ],
+    )
+    def test_round_and_interval_stay_consistent(
+        self, review_round, score, threshold, expected_round, expected_interval
+    ):
+        from src.domain.dag import next_review_state
+
+        next_round, interval = next_review_state(review_round, score, threshold)
+        assert next_round == expected_round
+        assert interval == expected_interval

@@ -34,21 +34,23 @@ class GoalResolutionError(ValueError):
     """Raised when the requested goal cannot be resolved safely."""
 
 
-def find_project_root(cwd: Path | None = None) -> Path:
-    current = (cwd or Path.cwd()).resolve()
-    for candidate in [current, *current.parents]:
-        if (candidate / ".git").exists():
-            return candidate
-    return current
+# Deliberate stdlib copy of the canonical rule in src/infrastructure/config.py
+# (docs/20): explicit > DB_PATH env > <cwd>/learning.db; an explicit directory
+# (no sqlite suffix) means <dir>/learning.db. Pinned together by
+# tests/test_db_path_resolution.py.
+_SQLITE_SUFFIXES = {".db", ".sqlite", ".sqlite3"}
 
 
 def resolve_db_path(db_path: str | Path | None = None, cwd: Path | None = None) -> Path:
     if db_path:
-        return Path(db_path).expanduser().resolve()
+        candidate = Path(db_path).expanduser().resolve()
+        if candidate.suffix.lower() not in _SQLITE_SUFFIXES:
+            candidate = candidate / "learning.db"
+        return candidate
     env_path = os.environ.get("DB_PATH")
     if env_path:
         return Path(env_path).expanduser().resolve()
-    return find_project_root(cwd) / "data" / "learning.db"
+    return (cwd or Path.cwd()).resolve() / "learning.db"
 
 
 def _connect(db_path: Path) -> sqlite3.Connection:

@@ -145,14 +145,16 @@ def _fetch_all(db_path: Path, sql: str) -> list[dict]:
         return [dict(row) for row in conn.execute(sql).fetchall()]
 
 
-def test_resolve_db_path_defaults_to_current_project_root(tmp_path):
+def test_resolve_db_path_defaults_to_cwd(tmp_path, monkeypatch):
     persist = _load_persist_module()
+    monkeypatch.delenv("DB_PATH", raising=False)
     project = tmp_path / "project"
     nested = project / "a" / "b"
     nested.mkdir(parents=True)
+    # A .git ancestor must no longer pull the default away from cwd (docs/20).
     (project / ".git").mkdir()
 
-    assert persist.resolve_db_path(None, cwd=nested) == project / "learning.db"
+    assert persist.resolve_db_path(None, cwd=nested) == nested / "learning.db"
 
 
 def test_resolve_db_path_accepts_directory_or_sqlite_file(tmp_path):

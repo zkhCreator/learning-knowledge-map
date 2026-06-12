@@ -41,10 +41,25 @@ DEFAULT_MODEL=claude-sonnet-4-6
 | `LLM_BASE_URL` | 无 | 推荐使用的统一中转 domain |
 | `LLM_API_KEY` | 无 | 推荐使用的统一中转 key |
 | `DEFAULT_MODEL` | `claude-sonnet-4-6` | 默认模型名 |
-| `DB_PATH` | `data/learning.db` | SQLite 数据库路径 |
+| `DB_PATH` | `<当前目录>/learning.db` | SQLite 数据库路径（显式参数 > DB_PATH > CWD，见 docs/20） |
 | `MAX_DECOMPOSE_DEPTH` | `6` | 最大递归拆解深度 |
 | `MAX_DECOMPOSE_RETRIES` | `2` | 每层拆解最大重试次数 |
 | `ATOM_MAX_MINUTES` | `15` | 原子知识点最大预估学习时间 |
+| `EXAM_VALIDATE` | `1` | 出题后的反向校验 agent（工具侧，docs/23），设 `0` 跳过 |
+| `EXAM_SPOT_CHECK` | `1` | 评分后的边界题抽样复核（工具侧，docs/23），设 `0` 跳过 |
+
+### Skill 独立安装（npx skills add）
+
+仓库内每个 `skills/<name>/` 都可被 [vercel-labs/skills](https://github.com/vercel-labs/skills)
+安装到 Claude Code / Codex：
+
+```bash
+npx skills add <owner>/<repo> -a claude-code -a codex
+```
+
+需要 Python 运行时的 skill 自带 `_core/`（由 `python scripts/build_skills.py`
+vendor 自 `src/`，提交进 git）。**改动 `src/` 后必须重新运行该脚本**，否则
+`pytest`（`tests/test_skill_packaging.py` 的防漂移检查）会失败。详见 docs/22。
 
 ## 命令总览
 

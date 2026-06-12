@@ -28,14 +28,30 @@ import os
 import sys
 from pathlib import Path
 
-_PROJECT_ROOT = Path(__file__).resolve().parents[3]
-if str(_PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(_PROJECT_ROOT))
+# Resolve the shared runtime (vendored _core/ when installed, repo root in
+# development) — see docs/22 and scripts/_bootstrap.py.
+_SCRIPT_DIR = str(Path(__file__).resolve().parent)
+if _SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPT_DIR)
+import _bootstrap  # noqa: E402,F401
+
+
+_SQLITE_SUFFIXES = {".db", ".sqlite", ".sqlite3"}
 
 
 def _set_db_path(db: str | None) -> str:
-    # Fix DB_PATH before importing src.infrastructure.config (which reads it at import time).
-    resolved = str(Path(db).resolve()) if db else str(_PROJECT_ROOT / "data" / "learning.db")
+    # Fix DB_PATH before importing src.infrastructure.config (which reads it at
+    # import time). Priority per docs/20: --db > existing DB_PATH env > cwd default.
+    # An explicit directory means <dir>/learning.db, matching config.resolve_db_path.
+    if db:
+        candidate = Path(db).expanduser().resolve()
+        if candidate.suffix.lower() not in _SQLITE_SUFFIXES:
+            candidate = candidate / "learning.db"
+        resolved = str(candidate)
+    elif os.environ.get("DB_PATH"):
+        resolved = str(Path(os.environ["DB_PATH"]).expanduser().resolve())
+    else:
+        resolved = str(Path.cwd() / "learning.db")
     os.environ["DB_PATH"] = resolved
     return resolved
 
@@ -47,14 +63,21 @@ def _generate(node: str, user: str) -> int:
     data = start_exam(node=node, user_id=user)
     print(f"Generated exam {data['exam_id']} for node {data['node']['title']}")
     print(f"Questions: {data['total']}")
+    mnemonic = data.get("mnemonic")
+    if mnemonic and mnemonic.get("prompt"):
+        # Pre-exam active recall: surface the learner's own memory cues first.
+        print("\n--- 考前回忆（先在脑中回忆，再开始作答）---")
+        print(mnemonic["prompt"])
+        print("---")
     print("Answer it here, then come back to score:")
     print(deep_link("exam", exam=data["exam_id"]))
     return 0
 
 
 def _score(exam_id: str, user: str) -> int:
-    from src.agents.examiner import score_answer
+    from src.agents.examiner import score_answer, spot_check_scores
     from src.data import database as db
+    from src.infrastructure import config
     from src.services.exam import _get_exam, finish_exam  # noqa: WPS437 (intentional reuse)
     from src.infrastructure.web_link import deep_link
 
@@ -80,6 +103,13 @@ def _score(exam_id: str, user: str) -> int:
             "explanation": scoring.get("explanation", ""),
             "related_concepts": scoring.get("related_concepts", []),
         }
+
+    # Conservative second opinion on the most borderline scores before the
+    # attempt is finalized (docs/23 4a). Skippable with EXAM_SPOT_CHECK=0.
+    if config.EXAM_SPOT_CHECK:
+        adjustments = spot_check_scores(exam_id, node, sample_n=2)
+        for adj in adjustments:
+            print(f"Spot check adjusted a score: {adj['old_score']:.2f} → {adj['new_score']:.2f}")
 
     summary = finish_exam(exam_id=exam_id, user_id=user, question_meta=question_meta)
     verdict = "PASSED" if summary["passed"] else "FAILED"

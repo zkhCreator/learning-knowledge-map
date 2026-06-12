@@ -218,3 +218,151 @@ class TestReviewerMnemonicIntegration:
 
         context = get_retrieval_context(node_id=node["id"], user_id="default")
         assert context is None
+
+
+# ── Memory-loop wiring (docs/23 4b) ───────────────────────────────────────────
+
+from datetime import datetime, timedelta, timezone
+
+
+def _iso23(days_from_now: int) -> str:
+    return (datetime.now(timezone.utc) + timedelta(days=days_from_now)).isoformat()
+
+
+def _make_profile_and_anchor(node_id, effectiveness=None):
+    from src.data import database as db
+
+    db.create_cognitive_profile(
+        user_id="default", spatial_weight=0.7, symbolic_weight=0.2,
+        narrative_weight=0.1, assessed=True,
+    )
+    anchor = db.create_mnemonic_anchor(
+        user_id="default", node_id=node_id, strategy="spatial",
+        section_index=1, content="一楼大厅的保安登记簿", palace_location="一楼大厅",
+    )
+    if effectiveness is not None:
+        db.update_mnemonic_anchor(anchor["id"], effectiveness=effectiveness)
+    return anchor
+
+
+class TestPreExamMnemonic:
+    @patch("src.agents.examiner.llm.call_json")
+    def test_start_exam_returns_mnemonic_context(self, mock_call, tmp_db, make_node,
+                                                 make_outline, monkeypatch):
+        from src.services.exam import start_exam
+
+        monkeypatch.setattr("src.infrastructure.config.EXAM_VALIDATE", False)
+        node = make_node()
+        make_outline(node_id=node["id"])
+        _make_profile_and_anchor(node["id"])
+        mock_call.return_value = {
+            "questions": [{"question": "Q?", "expected_answer": "秘密答案"}]
+        }
+
+        data = start_exam(node=node["id"], user_id="default")
+
+        assert data["mnemonic"] is not None
+        assert data["mnemonic"]["strategy"] == "spatial"
+        # The retrieval prompt must never leak an expected answer.
+        assert "秘密答案" not in data["mnemonic"]["prompt"]
+
+    @patch("src.agents.examiner.llm.call_json")
+    def test_start_exam_mnemonic_none_without_profile(self, mock_call, tmp_db, make_node,
+                                                      make_outline, monkeypatch):
+        from src.services.exam import start_exam
+
+        monkeypatch.setattr("src.infrastructure.config.EXAM_VALIDATE", False)
+        node = make_node()
+        make_outline(node_id=node["id"])
+        mock_call.return_value = {
+            "questions": [{"question": "Q?", "expected_answer": "A."}]
+        }
+
+        data = start_exam(node=node["id"], user_id="default")
+        assert data["mnemonic"] is None
+
+    @patch("src.agents.examiner.llm.call_json")
+    def test_get_exam_view_carries_mnemonic(self, mock_call, tmp_db, make_node,
+                                            make_outline, monkeypatch):
+        from src.services.exam import get_exam_view, start_exam
+
+        monkeypatch.setattr("src.infrastructure.config.EXAM_VALIDATE", False)
+        node = make_node()
+        make_outline(node_id=node["id"])
+        _make_profile_and_anchor(node["id"])
+        mock_call.return_value = {
+            "questions": [{"question": "Q?", "expected_answer": "A."}]
+        }
+        data = start_exam(node=node["id"], user_id="default")
+
+        view = get_exam_view(data["exam_id"], user_id="default")
+        assert view["mnemonic"] is not None
+        assert view["mnemonic"]["strategy"] == "spatial"
+
+
+class TestEffectivenessWriteback:
+    def _reviewable_node(self, make_node):
+        from src.data import database as db
+
+        node = make_node()
+        db.upsert_state(node_id=node["id"], status="mastered", raw_score=0.9, stability=2.0)
+        rev = db.create_review(node_id=node["id"], scheduled_at=_iso23(-1), review_round=1)
+        exam = db.create_exam(node_id=node["id"])
+        q = db.add_exam_question(exam_id=exam["id"], question="Q?", expected_answer="A")
+        return node, rev, exam, q
+
+    def test_first_review_sets_effectiveness_to_score(self, make_node):
+        from src.data import database as db
+        from src.services.review import finish_review
+
+        node, rev, exam, q = self._reviewable_node(make_node)
+        _make_profile_and_anchor(node["id"])
+        db.answer_exam_question(q["id"], user_answer="A", score=0.9)
+
+        finish_review(exam_id=exam["id"], review_id=rev["id"], user_id="default")
+
+        rows = db.get_mnemonic_anchors(node_id=node["id"], user_id="default")
+        assert rows[0]["effectiveness"] == pytest.approx(0.9)
+
+    def test_subsequent_review_applies_ema(self, make_node):
+        from src.data import database as db
+        from src.services.review import finish_review
+
+        node, rev, exam, q = self._reviewable_node(make_node)
+        _make_profile_and_anchor(node["id"], effectiveness=0.5)
+        db.answer_exam_question(q["id"], user_answer="A", score=0.9)
+
+        finish_review(exam_id=exam["id"], review_id=rev["id"], user_id="default")
+
+        rows = db.get_mnemonic_anchors(node_id=node["id"], user_id="default")
+        # 0.7 * 0.5 + 0.3 * 0.9 = 0.62
+        assert rows[0]["effectiveness"] == pytest.approx(0.62)
+
+
+class TestChatTurnAnchorInjection:
+    @patch("src.agents.teacher.llm.call_json")
+    def test_db_anchors_injected_even_without_outline_mnemonic(self, mock_call, tmp_db, make_node):
+        """Anchors stored in the DB must reach the Socratic prompt even when the
+        outline JSON itself carries no mnemonic fields (old sessions)."""
+        from src.data import database as db
+        from src.agents.teacher import chat_turn
+
+        node = make_node()
+        _make_profile_and_anchor(node["id"])
+        outline = db.create_outline(
+            node_id=node["id"],
+            sections=[{"index": 1, "title": "第一节", "content": "内容", "covered": False}],
+        )
+        session = db.create_learning_session(node_id=node["id"], outline_id=outline["id"])
+        mock_call.return_value = {"response": "好的", "newly_covered_sections": [1]}
+
+        chat_turn(
+            session=dict(session),
+            node=node,
+            outline_sections=[{"index": 1, "title": "第一节", "content": "内容"}],
+            user_message="开始吧",
+            history=[],
+        )
+
+        system_prompt = mock_call.call_args[0][0]
+        assert "一楼大厅的保安登记簿" in system_prompt

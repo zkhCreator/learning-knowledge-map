@@ -27,8 +27,13 @@ The review queue runs in the GUI workflow host (the `serve-learning-graph`
 skill). Start that server and open the Review view:
 
 ```bash
-node skills/serve-learning-graph/scripts/server.js --db data/learning.db --goal <goal-id-or-prefix> --user default --port 8765
+node "$SKILLS_DIR"/serve-learning-graph/scripts/server.js --db learning.db --goal <goal-id-or-prefix> --user default --port 8765
 ```
+
+`$SKILLS_DIR` is the directory that contains the installed skills — `skills/`
+when working inside this repository, or the agent's skill directory (e.g.
+`~/.claude/skills`) after `npx skills add`. `serve-learning-graph` is always a
+sibling of this skill and must be installed alongside it.
 
 Then open `http://127.0.0.1:<port>/?view=review`.
 
@@ -52,3 +57,8 @@ The same data is available headlessly through one read action:
 - `scripts/workflow_api.py` (in `serve-learning-graph`) dispatches the
   `review_queue` action to the service.
 - `src/services/review.py` holds the stateless review queue service.
+
+## Requirements
+
+- Install `serve-learning-graph` alongside this skill (it hosts the Review
+  queue view). Listing the queue needs no LLM and no extra pip packages.

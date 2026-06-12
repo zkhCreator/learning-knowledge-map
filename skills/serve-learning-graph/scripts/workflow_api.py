@@ -32,12 +32,14 @@ from typing import Any
 
 from export_graph import export_graph, resolve_db_path
 
-# Make the project root importable so the workflow service layer (src.*) loads
-# when this adapter runs as a standalone subprocess from any cwd. The lazy
+# Make the workflow service layer (src.*) importable when this adapter runs as
+# a standalone subprocess from any cwd: vendored _core/ when installed, repo
+# root in development — see docs/22 and scripts/_bootstrap.py. The lazy
 # `from src.services...` imports inside the assessment handlers depend on this.
-_PROJECT_ROOT = Path(__file__).resolve().parents[3]
-if str(_PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(_PROJECT_ROOT))
+_SCRIPT_DIR = str(Path(__file__).resolve().parent)
+if _SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPT_DIR)
+import _bootstrap  # noqa: E402,F401
 
 
 FEATURES = ["graph", "goals", "assess", "learn", "exam", "review", "workflow-host"]
